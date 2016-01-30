@@ -1,9 +1,9 @@
 ;;;
-;;;
+;;; (put 'if-followed-by 'scheme-indent-function 2)
 ;;;
 (define-module lang.scheme.gauche (extend lang.core)
   (use gauche.parameter)
-  (export scan-gauche
+  (export gauche-scan
           print-token
           token-type
           token-string
@@ -15,19 +15,14 @@
 ;;;
 ;;;
 ;;;
-(define (scan-gauche)
+(define (gauche-scan)
   (parameterize ((file (port-name (current-input-port)))
                  (line (port-current-line (current-input-port))))
     (let ((ch (read-char)))
       (cond ((eof-object? ch) ch)
-            ((char-whitespace? ch)
-             (read-whitespaces (peek-char) (list ch)))
-            ((char=? #\; ch)
-             (read-comment (peek-char) (list ch)))
-
-            ((char-set-contains? #[(){}\[\]] ch)
-             (make-token ch (list ch)))
-
+            ((char-set-contains? #[(){}\[\].] ch) (make-token ch (list ch)))
+            ((char-whitespace? ch) (read-whitespaces (peek-char) (list ch)))
+            ((char=? #\; ch) (read-comment (peek-char) (list ch)))
             ((char=? #\" ch) (read-string (peek-char) (list ch)))
             ((char=? #\| ch) (read-escaped-symbol (peek-char) (list ch)))
             ((char=? #\# ch) (read-sharp (peek-char) (list ch)))
@@ -35,7 +30,7 @@
             ((char=? #\` ch) (make-token 'quasi-quote (list ch)))
             ((char=? #\, ch)
              (let ((x (peek-char)))
-               (cond ((eof-object? x) (error "unterminated unquote"))
+               (cond ((eof-object? x) (scan-error "unterminated unquote"))
                      ((char=? #\@ x)
                       (read-char)
                       (make-token 'unquote-splicing (list x ch)))
@@ -62,8 +57,8 @@
 
 ;;
 (define (read-quoted ch lis quote)
-  (cond ((eof-object? ch) (error "EOF encountered in a literal: "
-                                 (lis->string lis)))
+  (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: "
+                                      (lis->string lis)))
         ((char=? quote ch)
          (read-char)
          (cons ch lis))
@@ -72,7 +67,7 @@
          (read-char)
          (let ((x (read-char)))
            (if (eof-object? x)
-             (error "unexpected EOF: " (lis->string lis))
+             (scan-error "unexpected EOF: " (lis->string lis))
              (read-quoted (peek-char) (cons x (cons ch lis)) quote))))
 
         (else
@@ -95,7 +90,7 @@
 (define (check-valid-symbol lis)
   (or #t  ;; Anything is valid for now
       (if (memq #\# lis)
-        (error "invalid symbol name" (lis->string lis))
+        (scan-error "invalid symbol name" (lis->string lis))
         #t)))
 
 (define (read-symbol ch lis)
@@ -125,10 +120,18 @@
 (define (read-sharp ch lis)
 
   (define (unexpected-eof lis)
-    (error "unexpected EOF: " lis))
+    (scan-error "unexpected EOF: " (lis->string lis)))
 
   (define (unsupported lis)
-    (error "unsupported #-syntax: " lis))
+    (scan-error "unsupported #-syntax: " (lis->string lis)))
+
+  (define-syntax if-followed-by
+    (syntax-rules ()
+      ((_ x ch body ...)
+       (let ((x (read-char)))
+         (cond ((eof-object? x) (scan-error "unexpected EOF: " (lis->string lis)))
+               ((char=? ch  x)  body ...)
+               (else (scan-error "unsupported #-syntax: " (lis->string lis))))))))
 
   (read-char)
   (cond ((eof-object? ch) (unexpected-eof lis))
@@ -138,40 +141,12 @@
         ((char=? #\\ ch)  (read-character (peek-char) (cons ch lis)))
         ((char=? #\[ ch)  (read-char-set (peek-char) (cons ch lis)))
         ((char=? #\/ ch)  (read-regexp (peek-char) (cons ch lis)))
+        ((char=? #\| ch)  (read-nested-comment (peek-char) (cons ch lis) 0))
         ((char=? #\" ch)  (read-string-interpolation (peek-char) (cons ch lis)))
-
-        ((char=? #\` ch)
-         (let ((x (read-char)))
-           (cond ((eof-object? x) (unexpected-eof (cons ch lis)))
-                 ((char=? #\" x)
-                  (read-string-interpolation (peek-char) (cons x (cons ch lis))))
-                 (else
-                  (unsupported (cons x (cons ch lis)))))))
-
-        ((char=? #\* ch)
-         (let ((x (read-char)))
-           (cond ((eof-object? x) (unexpected-eof (cons ch lis)))
-                 ((char=? #\" x)
-                  (read-incomplete-string (peek-char) (cons x (cons ch lis))))
-                 (else
-                  (unsupported (cons x (cons ch lis)))))))
-
-        ((char=? #\, ch)
-         (let ((x (read-char)))
-           (cond ((eof-object? x) ((unexpected-eof (cons ch lis))))
-                 ((char=? #\( x)
-                  (make-token 'sharp-comma (cons x (cons ch lis))))
-                 (else
-                  (unsupported (cons x (cons ch lis)))))))
-        
-        ((char=? #\? ch)
-         (let ((x (read-char)))
-           (cond ((eof-object? x) ((unexpected-eof (cons ch lis))))
-                 ((char=? #\= x)
-                  (make-token 'debug-print (cons x (cons ch lis))))
-                 (else
-                  (unsupported (cons x (cons ch lis)))))))
-         
+        ((char=? #\` ch)  (if-followed-by x  #\"  (read-string-interpolation (peek-char) (cons x (cons ch lis)))))
+        ((char=? #\* ch)  (if-followed-by x  #\"  (read-incomplete-string (peek-char) (cons x (cons ch lis)))))
+        ((char=? #\, ch)  (if-followed-by x  #\(  (make-token 'sharp-comma (cons x (cons ch lis)))))
+        ((char=? #\? ch)  (if-followed-by x  #\=  (make-token 'debug-print (cons x (cons ch lis)))))
         ((char-set-contains? #[bdeiox] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[tfsu] ch)
          (let* ((l   (read-word (peek-char) (list ch)))
@@ -180,20 +155,13 @@
            (case sym
              ((t true f false) (make-token 'bool lis))
              ((s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64)
-              (let ((x (read-char)))
-                (cond ((eof-object? x) (unexpected-eof  lis))
-                      ((char=? #\( x)
-                       (make-token (string->symbol (string-append (symbol->string sym)
-                                                                  "vector-open"))
-                                   (cons x lis)))
-                      (else
-                       (unsupported (cons x lis))))))
+              (if-followed-by x  #\( (make-token (string->symbol #"~|sym|vector-open") (cons x lis))))
              (else (unsupported lis)))))
-        (else
-         (unsupported (cons ch lis)))))
+        (else (unsupported (cons ch lis)))))
 
 (define (read-character ch lis)
-  (cond ((eof-object? ch) (error "EOF encountered in character literal"))
+  (cond ((eof-object? ch) (scan-error "EOF encountered in character literal"
+                                      (lis->string lis)))
         ((char-set-contains? delimiter ch)
          (read-char)
          (make-token 'char (cons ch lis)))
@@ -204,7 +172,7 @@
 (define (read-char-set ch lis)
   (let ((lis (read-quoted ch lis #\])))
     (make-token 'char-set lis)))
-                 
+
 (define (read-incomplete-string ch lis)
   (let ((lis (read-quoted ch lis #\")))
     (make-token 'incomplete-string lis)))
@@ -222,10 +190,35 @@
     (cond ((string->number (lis->string lis))
            (make-token 'number lis))
           (else
-           (error "bad numeric format: " lis)))))
+           (scan-error "bad numeric format: " (lis->string lis))))))
 
+(define (read-nested-comment ch lis lvl)
+
+  (define-syntax if-followed-by
+    (syntax-rules ()
+      ((_ x char body ...)
+       (let ((x (read-char)))
+         (cond ((eof-object? x) (scan-error "EOF encountered in nested comment: "
+                                            (lis->string (cons ch lis))))
+               ((char=? char  x)  body ...)
+               (else (read-nested-comment (peek-char) (cons x (cons ch lis)) lvl)))))))
+
+  (read-char)
+  (cond ((eof-object? ch) (scan-error "EOF encountered in nested comment: " (lis->string lis)))
+        ((char=? #\| ch)
+         (if-followed-by x #\#
+           (cond ((= lvl 0) (make-token 'nested-comment (cons x (cons ch lis))))
+                 ((> lvl 0) (read-nested-comment (peek-char) (cons x (cons ch lis)) (- lvl 1)))
+                 (else  (scan-error "something went wrong: " (cons x (cons ch lis)) lvl)))))
+        ((char=? #\# ch)
+         (if-followed-by x #\|
+           (read-nested-comment (peek-char) (cons x (cons ch lis)) (+ lvl 1))))
+        (else
+         (read-nested-comment (peek-char) (cons ch lis) lvl))))
+
+;;;
 ;;; Emacs does not like char-set symtax....
-
+;;;
 (define char-special #[()\[\]{}" \\|;#])
 (define delimiter  #[\s|"()\[\]{};'`,])
 
