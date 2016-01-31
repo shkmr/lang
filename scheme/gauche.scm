@@ -2,7 +2,9 @@
 ;;;
 (define-module lang.scheme.gauche (extend lang.core)
   (use gauche.parameter)
-  (export gauche-scan
+  (use gauche.uvector)
+  (export gauche-read
+          gauche-scan
           print-token
           token-type
           token-string
@@ -10,6 +12,80 @@
           token-line
           ))
 (select-module lang.scheme.gauche)
+
+;;;
+;;;  gauche-read : usage example of gauche-scan
+;;;
+(define (gauche-read)
+
+  (define (token->object x)
+    (with-input-from-string (token-string x) read))
+
+  (define (read-pair cch lis)
+    (let ((x (gauche-scan)))
+      (cond ((eof-object? x) (error "Unexpected EOF"))
+            ((eq? cch (token-type x)) (reverse lis))
+            (else
+             (case (token-type x)
+               ((#\() (read-pair cch (cons (read-pair #\) '()) lis)))
+               ((#\[) (read-pair cch (cons (read-pair #\] '()) lis)))
+               ((#\{) (read-pair cch (cons (read-pair #\} '()) lis)))
+               ((#\) #\] #\}) (error "Unmatched parenthesis: " (token-type x)))
+               ((#\.) (append (reverse lis) (gauche-read)))
+               ((whitespaces comment nested-comment)         (read-pair cch lis))
+               ((quote quasi-quote unquote unquote-splicing)
+                (read-pair cch (cons (list (token-type x) (gauche-read)) lis)))
+               ((hash-bang)
+                ;; FIXME ignore until the end of line... for now
+                (read-comment (peek-char) '())
+                (read-pair cch lis))
+               ((sharp-comma)    (error "#,(tag arg ...) is not supported yet"))
+               ((sexp-comment)   (gauche-read) (read-pair cch lis))
+               ((vector-open)    (read-pair cch (cons (apply vector    (read-pair #\) '())) lis)))
+               ((s8vector-open)  (read-pair cch (cons (apply s8vector  (read-pair #\) '())) lis)))
+               ((u8vector-open)  (read-pair cch (cons (apply u8vector  (read-pair #\) '())) lis)))
+               ((s16vector-open) (read-pair cch (cons (apply s16vector (read-pair #\) '())) lis)))
+               ((u16vector-open) (read-pair cch (cons (apply u16vector (read-pair #\) '())) lis)))
+               ((s32vector-open) (read-pair cch (cons (apply s32vector (read-pair #\) '())) lis)))
+               ((u32vector-open) (read-pair cch (cons (apply u32vector (read-pair #\) '())) lis)))
+               ((s64vector-open) (read-pair cch (cons (apply s64vector (read-pair #\) '())) lis)))
+               ((u64vector-open) (read-pair cch (cons (apply u64vector (read-pair #\) '())) lis)))
+               ((f16vector-open) (read-pair cch (cons (apply f16vector (read-pair #\) '())) lis)))
+               ((f32vector-open) (read-pair cch (cons (apply f32vector (read-pair #\) '())) lis)))
+               ((f64vector-open) (read-pair cch (cons (apply f64vector (read-pair #\) '())) lis)))
+               (else             (read-pair cch (cons (token->object x) lis))))))))
+
+  (let ((x (gauche-scan)))
+    (cond ((eof-object? x) x)
+          (else
+           (case (token-type x)
+             ((#\() (read-pair #\) '()))
+             ((#\[) (read-pair #\] '()))
+             ((#\{) (read-pair #\} '()))
+             ((#\) #\] #\}) (error "Extra close parenthesis: " (token-type x)))
+             ((#\.) (error "dot in wrong context"))
+             ((whitespaces comment nested-comment) (gauche-read))
+             ((quote quasi-quote unquote unquote-splicing)
+              (list (token-type x) (gauche-read)))
+             ((hash-bang)
+              ;; FIXME ignore until the end of line... for now
+              (read-comment (peek-char) '())
+              (gauche-read))
+             ((sharp-comma)    (error "#,(tag arg ...) is not supported yet"))
+             ((sexp-comment)   (gauche-read) (gauche-read))
+             ((vector-open)    (apply vector    (read-pair #\) '())))
+             ((s8vector-open)  (apply s8vector  (read-pair #\) '())))
+             ((u8vector-open)  (apply u8vector  (read-pair #\) '())))
+             ((s16vector-open) (apply s16vector (read-pair #\) '())))
+             ((u16vector-open) (apply u16vector (read-pair #\) '())))
+             ((s32vector-open) (apply s32vector (read-pair #\) '())))
+             ((u32vector-open) (apply u32vector (read-pair #\) '())))
+             ((s64vector-open) (apply s64vector (read-pair #\) '())))
+             ((u64vector-open) (apply u64vector (read-pair #\) '())))
+             ((f16vector-open) (apply f16vector (read-pair #\) '())))
+             ((f32vector-open) (apply f32vector (read-pair #\) '())))
+             ((f64vector-open) (apply f64vector (read-pair #\) '())))
+             (else             (token->object x)))))))
 
 ;;;
 ;;;

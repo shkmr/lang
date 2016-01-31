@@ -8,6 +8,35 @@
 #;(with-input-from-file "gauche.scm"
     (cut port-for-each print-token gauche-scan))
 
+(test-section "gauche-read")
+
+;;;
+;;;
+;;;
+(define (compare-read str p?)
+  (let ((x (with-input-from-string str gauche-read))
+        (y (with-input-from-string str read)))
+    (if p? (begin  (newline)
+                   (write x) (newline)
+                   (write y) (newline)))
+    (equal? x y)))
+
+(define (test-read str) (test* str #t (compare-read str #f)))
+
+(test-read "a")
+(test-read "123")
+(test-read "()")
+(test-read "'()")
+(test-read "(a)")
+(test-read "(a b c)")
+(test-read "(a b . c)")
+(test-read "(a b . (c))")
+(test-read "#(a b c)")
+(test-read "#[a b c]")
+(test-read "#[abc]")
+(test-read "#/abc/")
+(test-read "(a (b c))")
+
 ;;;
 ;;;
 ;;;
