@@ -149,7 +149,7 @@
         ((char-set-contains? #[BDEIOXbdeiox1-9] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[TFSUtfsu] ch)
          (let* ((l   (read-word (peek-char) (list ch)))
-                (sym (lis->symbol (map char-foldcase l))))
+                (sym (lis->symbol (map char-foldcase l)))
                 (lis (append l lis)))
            (case sym
              ((t true f false) (make-token 'bool lis))
