@@ -89,7 +89,6 @@
       (close-port x)
       (close-port y))))
 
-
 (for-each (lambda (f)
             (test* f #t (compare-read-file f)))
           '("gauche.scm"
