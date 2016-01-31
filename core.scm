@@ -9,7 +9,7 @@
 (define-condition-type <scan-error> <error> #f)
 
 (define (scan-error . x)
-  (apply error (cons <scan-eror> x)))
+  (apply error (cons <scan-error> x)))
 
 (define-record-type token
   (%make-token type string file line)

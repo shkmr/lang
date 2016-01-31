@@ -1,5 +1,4 @@
 ;;;
-;;; (put 'if-followed-by 'scheme-indent-function 2)
 ;;;
 (define-module lang.scheme.gauche (extend lang.core)
   (use gauche.parameter)
@@ -147,7 +146,7 @@
         ((char=? #\* ch)  (if-followed-by x  #\"  (read-incomplete-string (peek-char) (cons x (cons ch lis)))))
         ((char=? #\, ch)  (if-followed-by x  #\(  (make-token 'sharp-comma (cons x (cons ch lis)))))
         ((char=? #\? ch)  (if-followed-by x  #\=  (make-token 'debug-print (cons x (cons ch lis)))))
-        ((char-set-contains? #[bdeiox] ch) (read-number (peek-char) (cons ch lis)))
+        ((char-set-contains? #[bdeiox1-9] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[tfsu] ch)
          (let* ((l   (read-word (peek-char) (list ch)))
                 (sym (lis->symbol l))
@@ -221,5 +220,8 @@
 ;;;
 (define char-special #[()\[\]{}" \\|;#])
 (define delimiter  #[\s|"()\[\]{};'`,])
+
+;;; For Emacs
+;; (put 'if-followed-by 'scheme-indent-function 2)
 
 (provide "lang/scheme/gauche")
