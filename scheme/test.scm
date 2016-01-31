@@ -1,41 +1,95 @@
 (use gauche.test)
+(use gauche.parameter)
 (use text.tree)
 (test-start "lang.scheme.gauche")
 (add-load-path "../..")
 (use lang.scheme.gauche)
 (test-module 'lang.scheme.gauche)
 
-#;(with-input-from-file "gauche.scm"
-    (cut port-for-each print-token gauche-scan))
+(define p? (make-parameter #f))
 
+;;;
+;;;
+;;;
 (test-section "gauche-read")
 
-;;;
-;;;
-;;;
-(define (compare-read str p?)
+(define (compare-read str)
   (let ((x (with-input-from-string str gauche-read))
         (y (with-input-from-string str read)))
-    (if p? (begin  (newline)
-                   (write x) (newline)
-                   (write y) (newline)))
+    (if (p?) (begin (newline)
+                    (write x) (newline)
+                    (write y) (newline)))
     (equal? x y)))
+(define (test-read str) (test* str #t (compare-read str)))
 
-(define (test-read str) (test* str #t (compare-read str #f)))
+;;(p? #t)
+(test-read "a"     )
+(test-read ".a"    )
+(test-read ".1"    )
+(test-read ".1."   )
+(test-read ".."    )
+(test-read "..."   )
+(test-read "123"   )
+(test-read "()"    )
+(test-read "'()"   )
+(test-read "'a"    )
+(test-read "'(a)"  )
+(test-read "`a"    )
+(test-read "`(a)"           )
+(test-read "`(a b c)"       )
+(test-read "`(a . (b . c))" )
+(test-read "`(a b c)"    )
+(test-read "`(a ,b c)"   )
+(test-read "`(a ,(b) c)" )
+(test-read "`(a ,(b) c)" )
+(test-read "`((a . ,b))" )
+(test-read "`((a . ,b) (c . ,d))"    )
+(test-read "`((\"a(\" . ,b)))"       )
+(test-read "(foo `((\"a(\" . ,b))))" )
+(test-read "(a)"         )
+(test-read "(a b c)"     )
+(test-read "(a b . c)"   )
+(test-read "(a b . (c))" )
+(test-read "(a (b c))"   )
+(test-read "#(a b c)"    )
+(test-read "#[a b c]"    )
+(test-read "#[abc]"      )
+(test-read "#/abc/"      )
+(test-read "#u8(1 2 3)"  )
+(test-read "#f16(1.0 2.0 3.0)")
+(test-read "#f64(1.0 2.0 3.0)")
 
-(test-read "a")
-(test-read "123")
-(test-read "()")
-(test-read "'()")
-(test-read "(a)")
-(test-read "(a b c)")
-(test-read "(a b . c)")
-(test-read "(a b . (c))")
-(test-read "#(a b c)")
-(test-read "#[a b c]")
-(test-read "#[abc]")
-(test-read "#/abc/")
-(test-read "(a (b c))")
+(test-read "\
+  (define uvector-alist
+    `((\"#s8(\"  . ,s8vector )
+      (\"#u8(\"  . ,u8vector )))))")
+;;;
+;;;
+;;;
+(test-section "read-file")
+
+(define (compare-read-file file)
+  (let ((x (open-input-file file))
+        (y (open-input-file file)))
+    (define (xread) (with-input-from-port x gauche-read))
+    (define (yread) (with-input-from-port y read))
+    (unwind-protect
+        (let lp ((x1 (xread)) (y1 (yread)))
+          (cond ((and (eof-object? x1)
+                      (eof-object? y1)) #t)
+                ((eof-object? x1) #f)
+                ((eof-object? y1) #f)
+                ((equal? x1 y1)
+                 (lp (xread) (yread)))
+                ((p?)
+                 (write x1) (newline)
+                 (write y1) (newline)
+                 #f)
+                (else #f)))
+      (close-port x)
+      (close-port y))))
+
+(test* "gauche.scm" #t (compare-read-file "gauche.scm"))
 
 ;;;
 ;;;
