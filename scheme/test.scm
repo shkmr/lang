@@ -89,7 +89,14 @@
       (close-port x)
       (close-port y))))
 
-(test* "gauche.scm" #t (compare-read-file "gauche.scm"))
+
+(for-each (lambda (f)
+            (test* f #t (compare-read-file f)))
+          '("gauche.scm"
+            "../core.scm"
+            "../../scmxref/read-and-anchor.scm"
+            "../../scmxref/dictionary.scm"
+            "../../scmxref/path-util.scm"))
 
 ;;;
 ;;;
@@ -101,7 +108,13 @@
     (with-output-to-file "fo.scm" (cut write-tree x)))
   (sys-system #"diff ~|file| fo.scm"))
 
-(test* "gauche.scm" 0 (test-copy "gauche.scm"))
+(for-each (lambda (f)
+            (test* f 0 (test-copy f)))
+          '("gauche.scm"
+            "../core.scm"
+            "../../scmxref/read-and-anchor.scm"
+            "../../scmxref/dictionary.scm"
+            "../../scmxref/path-util.scm"))
 
 ;;;
 ;;;
