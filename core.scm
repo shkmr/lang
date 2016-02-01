@@ -6,10 +6,10 @@
   (use gauche.record))
 (select-module lang.core)
 
-(define-condition-type <scan-error> <error> #f)
+(define-condition-type <scan-error> <error> #f (lis))
 
-(define (scan-error . x)
-  (apply error (cons <scan-error> x)))
+(define (scan-error msg lis . x)
+  (error <scan-error> :lis lis msg (lis->string lis) x))
 
 (define-record-type token
   (%make-token type string file line)

@@ -113,7 +113,7 @@
             ((char=? #\` ch) (make-token 'quasiquote (list ch)))
             ((char=? #\, ch)
              (let ((x (peek-char)))
-               (cond ((eof-object? x) (scan-error "unterminated unquote"))
+               (cond ((eof-object? x) (scan-error "unterminated unquote" (list ch)))
                      ((char=? #\@ x)
                       (read-char)
                       (make-token 'unquote-splicing (list x ch)))
@@ -140,8 +140,7 @@
 
 ;;
 (define (read-quoted ch lis quote)
-  (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: "
-                                      (lis->string lis)))
+  (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: " lis))
         ((char=? quote ch)
          (read-char)
          (cons ch lis))
@@ -150,7 +149,7 @@
          (read-char)
          (let ((x (read-char)))
            (if (eof-object? x)
-             (scan-error "unexpected EOF: " (lis->string lis))
+             (scan-error "unexpected EOF: " lis)
              (read-quoted (peek-char) (cons x (cons ch lis)) quote))))
 
         (else
@@ -173,7 +172,7 @@
 (define (check-valid-symbol lis)
   (or #t  ;; Anything is valid for now
       (if (memq #\# lis)
-        (scan-error "invalid symbol name" (lis->string lis))
+        (scan-error "invalid symbol name" lis)
         #t)))
 
 (define (read-symbol ch lis)
@@ -203,18 +202,18 @@
 (define (read-sharp ch lis)
 
   (define (unexpected-eof lis)
-    (scan-error "unexpected EOF: " (lis->string lis)))
+    (scan-error "unexpected EOF: " lis))
 
   (define (unsupported lis)
-    (scan-error "unsupported #-syntax: " (lis->string lis)))
+    (scan-error "unsupported #-syntax: " lis))
 
   (define-syntax if-followed-by
     (syntax-rules ()
       ((_ x ch body ...)
        (let ((x (read-char)))
-         (cond ((eof-object? x) (scan-error "unexpected EOF: " (lis->string lis)))
+         (cond ((eof-object? x) (scan-error "unexpected EOF: " lis))
                ((char=? ch  x)  body ...)
-               (else (scan-error "unsupported #-syntax: " (lis->string lis))))))))
+               (else (scan-error "unsupported #-syntax: " lis)))))))
 
   (read-char)
   (cond ((eof-object? ch) (unexpected-eof lis))
@@ -243,8 +242,7 @@
         (else (unsupported (cons ch lis)))))
 
 (define (read-character ch lis)
-  (cond ((eof-object? ch) (scan-error "EOF encountered in character literal"
-                                      (lis->string lis)))
+  (cond ((eof-object? ch) (scan-error "EOF encountered in character literal: " lis))
         ((char-set-contains? delimiter ch)
          (read-char)
          (make-token 'char (cons ch lis)))
@@ -273,7 +271,7 @@
     (cond ((string->number (lis->string lis))
            (make-token 'number lis))
           (else
-           (scan-error "bad numeric format: " (lis->string lis))))))
+           (scan-error "bad numeric format: " lis)))))
 
 (define (read-nested-comment ch lis lvl)
 
@@ -281,13 +279,12 @@
     (syntax-rules ()
       ((_ x char body ...)
        (let ((x (read-char)))
-         (cond ((eof-object? x) (scan-error "EOF encountered in nested comment: "
-                                            (lis->string (cons ch lis))))
+         (cond ((eof-object? x) (scan-error "EOF encountered in nested comment: " (cons ch lis)))
                ((char=? char  x)  body ...)
                (else (read-nested-comment (peek-char) (cons x (cons ch lis)) lvl)))))))
 
   (read-char)
-  (cond ((eof-object? ch) (scan-error "EOF encountered in nested comment: " (lis->string lis)))
+  (cond ((eof-object? ch) (scan-error "EOF encountered in nested comment: " lis))
         ((char=? #\| ch)
          (if-followed-by x #\#
            (cond ((= lvl 0) (make-token 'nested-comment (cons x (cons ch lis))))
