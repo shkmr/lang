@@ -5,6 +5,7 @@
   (use gauche.parameter)
   (export c89-scan
           register-typedef-for-c89-scan
+          reset-typedef-for-c89-scan
           print-token
           token-type
           token-string
@@ -49,12 +50,12 @@
 
             ((char=? #\0 ch)
              (let ((x (peek-char)))
-               (cond ((eof-object?   x) (make-token 'integer (list ch)))
+               (cond ((eof-object?   x) (make-token 'INTEGER-CONSTANT (list ch)))
                      ((char-ci=? #\x x) (read-char) (read-hexadecimal (peek-char) (list x ch)))
                      ((char=?    #\. x) (read-char) (read-flonum (peek-char) (list x ch) #[0-9] 10 #[Ee]))
                      ((char-ci=? #\e x) (read-flonum (peek-char) (list ch) #[0-9] 10 #[Ee]))
                      ((char-set-contains? #[0-7] x) (read-octal (peek-char) (list ch)))
-                     (else (make-token 'integer (list ch))))))
+                     (else (make-token 'INTEGER-CONSTANT (list ch))))))
 
             ((char-numeric? ch)         (read-decimal (peek-char) (list ch)))
 
@@ -109,7 +110,7 @@
 (define (read-sharp ch lis)
   (read-char)
   (cond ((eof-object? ch) (make-token 'sharp-command lis))
-        ((char=? #\nl ch) 
+        ((char=? #\nl ch)
          (make-token 'sharp-command (cons ch lis)))
         ((char=? #\\ ch)
          (let ((x (read-char)))
@@ -154,6 +155,7 @@
     (for      .  FOR)
     (goto     .  GOTO)
     (if       .  IF)
+    (inline   .  INLINE)
     (int      .  INT)
     (long     .  LONG)
     (register .  REGISTER)
@@ -170,7 +172,7 @@
     (void     .  VOID)
     (volatile .  VOLATILE)
     (while    .  WHILE)
-    (__builtin_va_list . ELLIPSIS)
+    (__builtin_va_list . __BUILTIN_VA_LIST)
     ))
 
 ;;
@@ -179,9 +181,13 @@
 (define (is-typedefed? id)
   (memq id typedefed))
 
+(define (reset-typedef-for-c89-scan)
+  (set! typedefed '()))
+
 (define (register-typedef-for-c89-scan id)
   (unless (is-typedefed? id)
-    (push! typedefed id)))
+    (push! typedefed id))
+  (print "register-typedef-for-c89-scan: added: " id))
 
 ;;
 (define (read-identifier ch lis)
@@ -192,7 +198,7 @@
       (if k
         (make-token k lis)
         (if (is-typedefed? s)
-          (make-token 'typedefed-id lis)
+          (make-token 'TYPEDEF-NAME lis)
           (make-token 'IDENTIFIER lis)))))
 
   (cond ((eof-object? ch) (return lis))
@@ -278,7 +284,7 @@
          (read-char)
          (read-number-constant (peek-char) (cons ch lis) ics radix ecs))
         (else
-         (make-token 'integer lis))))
+         (make-token 'INTEGER-CONSTANT lis))))
 
 (define (read-decimal ch lis)     (read-number-constant ch lis #[0-9]       10 #[Ee]))
 (define (read-hexadecimal ch lis) (read-number-constant ch lis #[0-9A-Fa-f] 16 #[Pp]))
@@ -288,7 +294,7 @@
         ((char-set-contains? #[0-7] ch)
          (read-char)
          (read-octal (peek-char) (cons ch lis)))
-        (else (make-token 'integer lis))))
+        (else (make-token 'INTEGER-CONSTANT lis))))
 
 (define (read-flonum ch lis ics radix ecs)
 
@@ -306,14 +312,14 @@
         ((char-ci=? #\f ch)
          (read-char)
          (error-if-hex ch)
-         (make-token 'float (cons ch lis)))
+         (make-token 'FLOAT-CONSTANT (cons ch lis)))
         ((char-ci=? #\l ch)
          (read-char)
          (error-if-hex ch)
-         (make-token 'long-double (cons ch lis)))
+         (make-token 'LONG-DOUBLE-CONSTANT (cons ch lis)))
         (else
          (error-if-hex #f)
-         (make-token 'double lis))))
+         (make-token 'DOUBLE-CONSTANT lis))))
 
 (define (read-expnum ch lis radix)
 
@@ -323,12 +329,12 @@
            (exp1 (peek-char) (cons ch lis)))
           ((char-ci=? #\f ch)
            (read-char)
-           (make-token 'float (cons ch lis)))
+           (make-token 'FLOAT-CONSTANT (cons ch lis)))
           ((char-ci=? #\l ch)
            (read-char)
-           (make-token 'long-double (cons ch lis)))
+           (make-token 'LONG-DOUBLE-CONSTANT (cons ch lis)))
           (else
-           (make-token 'double lis))))
+           (make-token 'DOUBLE-CONSTANT lis))))
 
   (cond ((eof-object? ch) (scan-error "Unpexpected EOF: " lis))
         ((char-set-contains? #[0-9\-\+] ch)
@@ -356,9 +362,9 @@
          (read-quoted (peek-char) (cons ch lis) quote))))
 
 (define (read-string ch lis)
-  (make-token 'string (read-quoted ch lis #\")))
+  (make-token 'STRING (read-quoted ch lis #\")))
 
 (define (read-character ch lis)
-  (make-token 'character (read-quoted ch lis #\')))
+  (make-token 'CHARACTER-CONSTANT (read-quoted ch lis #\')))
 
 (provide "lang/c/c89-scan")
