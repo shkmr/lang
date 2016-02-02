@@ -187,7 +187,7 @@
 (define (read-identifier ch lis)
 
   (define (return lis)
-    (let* ((s (string->symbol (apply string lis)))
+    (let* ((s (string->symbol (apply string (reverse lis))))
            (k (assoc-ref c-keywords s #f eq?)))
       (if k
         (make-token k lis)
