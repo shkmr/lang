@@ -21,90 +21,6 @@
 (define identifier-charset           #[A-Za-z_$0-9])
 (define operator-charset             #[*~!+\-/\^&%=?<>.|])
 
-(define typedefed '())
-
-(define (is-typedefed? id)
-  (memq id typedefed))
-
-(define (register-typedef-for-c89-scan id)
-  (unless (is-typedefed? id)
-    (push! typedefed id)))
-
-(define c-keywords
-  '((auto     .   AUTO)
-    (break    .   BREAK)
-    (case     .   CASE)
-    (char     .   CHAR)
-    (const    .   CONST)
-    (continue .   CONTINUE)
-    (default  .   DEFAULT)
-    (do       .   DO)
-    (double   .   DOUBLE)
-    (else     .   ELSE)
-    (enum     .   ENUM)
-    (extern   .   EXTERN)
-    (float    .   FLOAT)
-    (for      .   FOR)
-    (goto     .   GOTO)
-    (if       .   IF)
-    (int      .   INT)
-    (long     .   LONG)
-    (register .   REGISTER)
-    (return   .   RETURN)
-    (short    .   SHORT)
-    (signed   .   SIGNED)
-    (sizeof   .   SIZEOF)
-    (static   .   STATIC)
-    (struct   .   STRUCT)
-    (switch   .   SWITCH)
-    (typedef  .   TYPEDEF)
-    (union    .   UNION)
-    (unsigned .   UNSIGNED)
-    (void     .   VOID)
-    (volatile .   VOLATILE)
-    (while    .   WHILE)
-    (__builtin_va_list . ELLIPSIS)
-    ))
-
-(define c-operators
-  ;; right to left
-  '((( #\= #\> #\> )  .  RIGHT_ASSIGN ) ; >>=
-    (( #\= #\< #\< )  .  LEFT_ASSIGN  ) ; <<=
-    (( #\. #\. #\. )  .  ELLIPSIS     )
-    (( #\= #\+ )      .  ADD_ASSIGN   ) ; +=
-    (( #\= #\- )      .  SUB_ASSIGN   ) ; -=
-    (( #\= #\* )      .  MUL_ASSIGN   ) ; *=
-    (( #\= #\/ )      .  DIV_ASSIGN   ) ; /=
-    (( #\= #\% )      .  MOD_ASSIGN   ) ; %=
-    (( #\= #\& )      .  AND_ASSIGN   ) ; &=
-    (( #\= #\^ )      .  XOR_ASSIGN   ) ; ^=
-    (( #\= #\| )      .  OR_ASSIGN    ) ; |=
-    (( #\> #\> )      .  RIGHT_OP     )
-    (( #\< #\< )      .  LEFT_OP      )
-    (( #\> )          .  >            )
-    (( #\< )          .  <            )
-    (( #\+ #\+ )      .  INC_OP       )
-    (( #\- #\- )      .  DEC_OP       )
-    (( #\> #\- )      .  PTR_OP       ) ; ->
-    (( #\& #\& )      .  AND_OP       )
-    (( #\| #\| )      .  OR_OP        )
-    (( #\= #\< )      .  LE_OP        ) ; <=
-    (( #\= #\> )      .  GE_OP        ) ; >=
-    (( #\= #\= )      .  EQ_OP        )
-    (( #\= #\! )      .  NE_OP        )
-    (( #\*     )      .  *            )
-    (( #\/     )      .  /            )
-    (( #\+     )      .  +            )
-    (( #\-     )      .  -            )
-    (( #\%     )      .  %            )
-    (( #\&     )      .  &            )
-    (( #\|     )      .  OR           )
-    (( #\^     )      .  ^            )
-    (( #\=     )      .  =            )
-    (( #\?     )      .  ?            )
-    (( #\.     )      .  DOT          )
-    ))
-
 ;;;
 ;;;
 ;;;
@@ -176,8 +92,10 @@
             (else
              (make-token 'illegal-char (list ch)))))))
 
-;;----------------------------------------------------------------
-;;
+;;;----------------------------------------------------------------
+;;;
+;;;
+;;;
 (define (read-whitespaces ch lis)
   (cond ((eof-object? ch) (make-token 'whitespaces lis))
         ((char-whitespace? ch)
@@ -213,7 +131,133 @@
          (read-char)
          (read-/*-comment (peek-char) (cons ch lis)))))
 
+;;;
+;;;    read-identifier : returns IDENTIFIER or one of keywords or typedefed.
+;;;
+(define c-keywords
+  '((auto     .  AUTO)
+    (break    .  BREAK)
+    (case     .  CASE)
+    (char     .  CHAR)
+    (const    .  CONST)
+    (continue .  CONTINUE)
+    (default  .  DEFAULT)
+    (do       .  DO)
+    (double   .  DOUBLE)
+    (else     .  ELSE)
+    (enum     .  ENUM)
+    (extern   .  EXTERN)
+    (float    .  FLOAT)
+    (for      .  FOR)
+    (goto     .  GOTO)
+    (if       .  IF)
+    (int      .  INT)
+    (long     .  LONG)
+    (register .  REGISTER)
+    (return   .  RETURN)
+    (short    .  SHORT)
+    (signed   .  SIGNED)
+    (sizeof   .  SIZEOF)
+    (static   .  STATIC)
+    (struct   .  STRUCT)
+    (switch   .  SWITCH)
+    (typedef  .  TYPEDEF)
+    (union    .  UNION)
+    (unsigned .  UNSIGNED)
+    (void     .  VOID)
+    (volatile .  VOLATILE)
+    (while    .  WHILE)
+    (__builtin_va_list . ELLIPSIS)
+    ))
+
 ;;
+(define typedefed '())
+
+(define (is-typedefed? id)
+  (memq id typedefed))
+
+(define (register-typedef-for-c89-scan id)
+  (unless (is-typedefed? id)
+    (push! typedefed id)))
+
+;;
+(define (read-identifier ch lis)
+
+  (define (return lis)
+    (let* ((s (string->symbol (apply string lis)))
+           (k (assoc-ref c-keywords s #f eq?)))
+      (if k
+        (make-token k lis)
+        (if (is-typedefed? s)
+          (make-token 'typedefed-id lis)
+          (make-token 'IDENTIFIER lis)))))
+
+  (cond ((eof-object? ch) (return lis))
+        ((char-set-contains? identifier-charset ch)
+         (read-char)
+         (read-identifier (peek-char) (cons ch lis)))
+        (else (return lis))))
+
+;;;
+;;;    read-operator
+;;;
+(define c-operators
+  ;; right to left
+  '((( #\= #\> #\> ) .  RIGHT_ASSIGN) ; >>=
+    (( #\= #\< #\< ) .  LEFT_ASSIGN ) ; <<=
+    (( #\. #\. #\. ) .  ELLIPSIS    )
+    (( #\= #\+ )     .  ADD_ASSIGN  ) ; +=
+    (( #\= #\- )     .  SUB_ASSIGN  ) ; -=
+    (( #\= #\* )     .  MUL_ASSIGN  ) ; *=
+    (( #\= #\/ )     .  DIV_ASSIGN  ) ; /=
+    (( #\= #\% )     .  MOD_ASSIGN  ) ; %=
+    (( #\= #\& )     .  AND_ASSIGN  ) ; &=
+    (( #\= #\^ )     .  XOR_ASSIGN  ) ; ^=
+    (( #\= #\| )     .  OR_ASSIGN   ) ; |=
+    (( #\> #\> )     .  RIGHT_OP    )
+    (( #\< #\< )     .  LEFT_OP     )
+    (( #\> )         .  >           )
+    (( #\< )         .  <           )
+    (( #\+ #\+ )     .  INC_OP      )
+    (( #\- #\- )     .  DEC_OP      )
+    (( #\> #\- )     .  PTR_OP      ) ; ->
+    (( #\& #\& )     .  AND_OP      )
+    (( #\| #\| )     .  OR_OP       )
+    (( #\= #\< )     .  LE_OP       ) ; <=
+    (( #\= #\> )     .  GE_OP       ) ; >=
+    (( #\= #\= )     .  EQ_OP       )
+    (( #\= #\! )     .  NE_OP       )
+    (( #\*     )     .  *           )
+    (( #\/     )     .  /           )
+    (( #\+     )     .  +           )
+    (( #\-     )     .  -           )
+    (( #\%     )     .  %           )
+    (( #\&     )     .  &           )
+    (( #\|     )     .  OR          )
+    (( #\^     )     .  ^           )
+    (( #\=     )     .  =           )
+    (( #\?     )     .  ?           )
+    (( #\.     )     .  DOT         )
+    ))
+
+;;
+(define (read-operator ch lis)
+
+  (define (return lis)
+    (let ((s (assoc-ref c-operators lis #f equal?)))
+      (if s
+        (make-token s lis)
+        (scan-error "Something went wrong..." lis))))
+
+  (cond ((eof-object? ch) (return lis))
+        ((assoc-ref c-operators (cons ch lis) #f equal?)
+         (read-char)
+         (read-operator (peek-char) (cons ch lis)))
+        (else (return lis))))
+
+;;;
+;;;    numbers
+;;;
 (define (read-number-constant ch lis ics radix ecs)
   (cond ((eof-object? ch) (scan-error "Unpexpected EOF: " lis))
         ((char-set-contains? ics ch)
@@ -311,38 +355,5 @@
 
 (define (read-character ch lis)
   (make-token 'character (read-quoted ch lis #\')))
-
-;;
-(define (read-identifier ch lis)
-
-  (define (return lis)
-    (let* ((s (string->symbol (apply string lis)))
-           (k (assoc-ref c-keywords s #f eq?)))
-      (if k
-        (make-token k lis)
-        (if (is-typedefed? s)
-          (make-token 'typedefed-id lis)
-          (make-token 'IDENTIFIER lis)))))
-
-  (cond ((eof-object? ch) (return lis))
-        ((char-set-contains? identifier-charset ch)
-         (read-char)
-         (read-identifier (peek-char) (cons ch lis)))
-        (else (return lis))))
-
-;;
-(define (read-operator ch lis)
-
-  (define (return lis)
-    (let ((s (assoc-ref c-operators lis #f equal?)))
-      (if s
-        (make-token s lis)
-        (scan-error "Something went wrong..." lis))))
-
-  (cond ((eof-object? ch) (return lis))
-        ((assoc-ref c-operators (cons ch lis) #f equal?)
-         (read-char)
-         (read-operator (peek-char) (cons ch lis)))
-        (else (return lis))))
 
 (provide "lang/c/c89-scan")
