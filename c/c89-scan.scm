@@ -105,10 +105,11 @@
          (make-token 'whitespaces lis))))
 
 (define (read-sharp ch lis)
+  (read-char)
   (cond ((eof-object? ch) (make-token 'sharp-command lis))
-        ((char=? #\nl ch) (make-token 'sharp-command (cons ch lis)))
+        ((char=? #\nl ch) 
+         (make-token 'sharp-command (cons ch lis)))
         ((char=? #\ ch)
-         (read-char)
          (let ((x (read-char)))
            (read-sharp (peek-char) (cons x (cons ch lis)))))
         (else

@@ -76,4 +76,22 @@
 ;; ## operator is processed by cpp, lexer is not expected to see it.
 ;;(test-scan "while##DO;" '())
 
+(test-section "token-string")
+
+(define p? (make-parameter #f))
+
+(define (test-copy file)
+  (let ((x (with-input-from-file file
+             (lambda ()
+               (port-map (lambda (x)
+                           (if (p?) (print-token x))
+                           (token-string x))
+                         c89-scan)))))
+    (with-output-to-file "fo.scm" (cut write-tree x))
+    (sys-system #"diff ~|file| fo.scm")))
+
+(for-each (lambda (f)
+            (test* f 0 (test-copy f)))
+          '("c/hello.c"))
+
 (test-end :exit-on-failure #t)
