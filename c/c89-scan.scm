@@ -90,7 +90,9 @@
             ((char-set-contains? initial-identifier-charset ch) (read-identifier (peek-char) (list ch)))
             ((char-set-contains? operator-charset ch)           (read-operator   (peek-char) (list ch)))
             (else
-             (make-token 'illegal-char (list ch)))))))
+             ;; we put extra #\x for debugging purpose
+             (make-token 'illegal-char (list #\x ch)) ; or raise error?
+             )))))
 
 ;;;----------------------------------------------------------------
 ;;;
@@ -109,7 +111,7 @@
   (cond ((eof-object? ch) (make-token 'sharp-command lis))
         ((char=? #\nl ch) 
          (make-token 'sharp-command (cons ch lis)))
-        ((char=? #\ ch)
+        ((char=? #\\ ch)
          (let ((x (read-char)))
            (read-sharp (peek-char) (cons x (cons ch lis)))))
         (else
@@ -239,6 +241,8 @@
     (( #\=     )     .  =           )
     (( #\?     )     .  ?           )
     (( #\.     )     .  DOT         )
+    (( #\!     )     .  !           )
+    (( #\~     )     .  ~           )
     ))
 
 ;;
