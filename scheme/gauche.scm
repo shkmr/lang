@@ -11,6 +11,7 @@
           token-string
           token-file
           token-line
+          <scan-error>
           ))
 (select-module lang.scheme.gauche)
 
