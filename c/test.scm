@@ -121,18 +121,22 @@
                (token-type x)
                (token-string x)))))))
 
+(use ggc.port.mirroring)
 (define (syntax-check file)
   (reset-typedef-for-c89-scan)
-  (with-input-from-process #"cc -E ~|file|"
+  (with-input-from-process #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
     (lambda ()
-      (c89-gram cscan error)
-      0)))
+      (with-input-from-port/mirroring-to-port
+       (current-input-port)
+       (current-output-port)
+       (lambda ()
+         (c89-gram cscan error)
+         0)))))
 
 (for-each (lambda (f)
             (test* f 0 (syntax-check f)))
-          (list "gcc-torture/src/20000112-1.c")
-          #;(take (test-c-files 1) 80)
-
+          (test-c-files 1)
+          #;(list "c/foo.c")
           )
 
 (test-end :exit-on-failure #t)

@@ -10,8 +10,8 @@
 (define c89-gram
   (lalr-parser
    (expect: 1)  ; IF-ELSE
-   (output: c89-gram "c89-gram.yy.scm")
-   (out-table: "c89-gram.out")
+   ;;(output: c89-gram "c89-gram.yy.scm")
+   ;;(out-table: "c89-gram.out")
    (ID
     SEMICOLON COMMA
     ;; LCBRA={  RCBRA=} LSBRA=[  RSBRA=]
@@ -31,12 +31,15 @@
     LEFT_ASSIGN RIGHT_ASSIGN
     AND_ASSIGN XOR_ASSIGN OR_ASSIGN
 
-    TYPEDEF TYPEDEF-NAME
+    TYPEDEF TYPE_NAME
     EXTERN STATIC AUTO REGISTER
-    CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOLATILE VOID
+    VOID CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE
+    CONST VOLATILE
+    INLINE NORETURN
     STRUCT UNION ENUM ELLIPSIS RANGE
     CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
-    __BUILTIN_VA_LIST
+
+    ASM ALIGNOF VA_LIST VA_ARG
     )
 
    (program
@@ -45,78 +48,37 @@
     )
 
    (file
-    (external_definition)
-    (file external_definition)
+    (external_declaration)
+    (file external_declaration)
     )
 
-   (external_definition
+   (external_declaration
     (function_definition)     : (compile $1)
+    (type_definition)         : (compile $1)
     (declaration)             : (compile $1)
     )
 
    (function_definition
-    (declarator function_body)                         : (list 'function-definition $1 #f $2)
-    (declaration_specifiers declarator function_body)  : (list 'function-definition $2 $1 $3)
+    (declaration_specifiers declarator declaration_list compound_statement) : (list 'define-function $2 $1 $3 $4)
+    (declaration_specifiers declarator compound_statement)                  : (list 'define-function $2 $1 #f $3)
+    (declarator declaration_list compound_statement)                        : (list 'define-function $1 #f $2 $3)
+    (declarator compound_statement)                                         : (list 'define-function $1 #f #f $2)
     )
 
-   (function_body
-    (compound_statement)                               : (list 'function-body #f $1)
-    (declaration_list compound_statement)              : (list 'function-body $1 $2)
-    )
-
-   (declaration
-    (declaration_specifiers SEMICOLON)                       : (list 'declaration $1 #f)
-    (declaration_specifiers init_declarator_list SEMICOLON)  : (list 'declaration $1 $2)
-    )
-
-   (declaration_specifiers
-    (storage_class_specifier)                            : (list $1)
-    (storage_class_specifier declaration_specifiers)     : (cons $1 $2)
-    (type_specifier)                                     : (list $1)
-    (type_specifier declaration_specifiers)              : (cons $1 $2)
-    )
-
-   (init_declarator_list
-    (init_declarator)                                    : (list $1)
-    (init_declarator_list COMMA init_declarator)         : (append $1 (list $2))
-    )
-
-   (init_declarator
-    (declarator)                                         : (list 'init-declarator $1 #f)
-    (declarator = initializer)                           : (list 'init-declarator $1 $3)
-    )
-
-   (storage_class_specifier
-    (TYPEDEF)                   : (list 'storage-class-specifier $1)
-    (EXTERN)                    : (list 'storage-class-specifier $1)
-    (STATIC)                    : (list 'storage-class-specifier $1)
-    (AUTO)                      : (list 'storage-class-specifier $1)
-    (REGISTER)                  : (list 'storage-class-specifier $1)
-    )
-
-   (type_specifier
-    (CHAR)                         : (list 'type-specifier $1)
-    (SHORT)                        : (list 'type-specifier $1)
-    (INT)                          : (list 'type-specifier $1)
-    (LONG)                         : (list 'type-specifier $1)
-    (SIGNED)                       : (list 'type-specifier $1)
-    (UNSIGNED)                     : (list 'type-specifier $1)
-    (FLOAT)                        : (list 'type-specifier $1)
-    (DOUBLE)                       : (list 'type-specifier $1)
-    (CONST)                        : (list 'type-specifier $1)
-    (VOLATILE)                     : (list 'type-specifier $1)
-    (VOID)                         : (list 'type-specifier $1)
-    (struct_or_union_specifier)    : (list 'type-specifier $1)
-    (enum_specifier)               : (list 'type-specifier $1)
-    (TYPEDEF-NAME)                 : (list 'type-specifier $1)
-    (__BUILTIN_VA_LIST)            : (list 'type-specifier $1)
+   (type_definition
+    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON)      : (list 'define-type $3 $2)
     )
 
    (primary_expr
     (IDENTIFIER)                   : $1
     (constant)                     : $1
-    (STRING)                       : $1
+    (string_list)                  : $1
     (LPAREN expr RPAREN)           : $2
+    )
+
+   (string_list
+    (STRING)                       : (list $1)
+    (STRING string_list)           : (cons $1 $2)
     )
 
    (postfix_expr
@@ -142,15 +104,18 @@
     (unary_operator cast_expr)         : (list $1 $2)
     (SIZEOF unary_expr)                : (list 'SIZEOF $2)
     (SIZEOF LPAREN type_name RPAREN)   : (list 'SIZEOF $3)
+    (ALIGNOF unary_expr)               : (list 'ALIGNOF $2)
+    (ALIGNOF LPAREN type_name RPAREN)  : (list 'ALIGNOF $3)
+    (VA_ARG LPAREN IDENTIFIER COMMA type_name RPAREN) : (list 'VA_ARG $3 $5)
     )
 
    (unary_operator
-    (&)
-    (*)
-    (+)
-    (-)
-    (~)
-    (!)
+    (&)                   : '&
+    (*)                   : '*
+    (+)                   : '+
+    (-)                   : '-
+    (~)                   : '~
+    (!)                   : '!
     )
 
    (cast_expr
@@ -166,176 +131,261 @@
     )
 
    (additive_expr
-    (multiplicative_expr)                     : $1
-    (additive_expr + multiplicative_expr)     : (list '+ $1 $3)
-    (additive_expr - multiplicative_expr)     : (list '- $1 $3)
+    (multiplicative_expr)                    : $1
+    (additive_expr + multiplicative_expr)    : (list '+ $1 $3)
+    (additive_expr - multiplicative_expr)    : (list '- $1 $3)
     )
 
    (shift_expr
-    (additive_expr)                            : $1
-    (shift_expr LEFT_OP additive_expr)         : (list 'LEFT_OP $1 $3)
-    (shift_expr RIGHT_OP additive_expr)        : (list 'RIGHT_OP $1 $3)
+    (additive_expr)                          : $1
+    (shift_expr LEFT_OP additive_expr)       : (list 'LEFT_OP $1 $3)
+    (shift_expr RIGHT_OP additive_expr)      : (list 'RIGHT_OP $1 $3)
     )
 
    (relational_expr
-    (shift_expr)                                : $1
-    (relational_expr < shift_expr)              : (list '< $1 $3)
-    (relational_expr > shift_expr)              : (list '> $1 $3)
-    (relational_expr LE_OP shift_expr)          : (list 'LE_OP $1 $3)
-    (relational_expr GE_OP shift_expr)          : (list 'GE_OP $1 $3)
+    (shift_expr)                             : $1
+    (relational_expr < shift_expr)           : (list '< $1 $3)
+    (relational_expr > shift_expr)           : (list '> $1 $3)
+    (relational_expr LE_OP shift_expr)       : (list 'LE_OP $1 $3)
+    (relational_expr GE_OP shift_expr)       : (list 'GE_OP $1 $3)
     )
 
    (equality_expr
-    (relational_expr)                            : $1
-    (equality_expr EQ_OP relational_expr)        : (list 'EQ_OP $1 $3)
-    (equality_expr NE_OP relational_expr)        : (list 'EQ_OP $1 $3)
+    (relational_expr)                        : $1
+    (equality_expr EQ_OP relational_expr)    : (list 'EQ_OP $1 $3)
+    (equality_expr NE_OP relational_expr)    : (list 'EQ_OP $1 $3)
     )
 
    (and_expr
-    (equality_expr)                              : $1
-    (and_expr & equality_expr)                   : (list '^ $1 $3)
+    (equality_expr)                          : $1
+    (and_expr & equality_expr)               : (list '^ $1 $3)
     )
-
 
    (exclusive_or_expr
-    (and_expr)                                   : $1
-    (exclusive_or_expr ^ and_expr)               : (list '^ $1 $3)
+    (and_expr)                               : $1
+    (exclusive_or_expr ^ and_expr)           : (list '^ $1 $3)
     )
-
 
    (inclusive_or_expr
-    (exclusive_or_expr)                           : $1
-    (inclusive_or_expr OR exclusive_or_expr)      : (list 'OR $1 $3)
+    (exclusive_or_expr)                      : $1
+    (inclusive_or_expr OR exclusive_or_expr) : (list 'OR $1 $3)
     )
 
-
    (logical_and_expr
-    (inclusive_or_expr)                          : $1
-    (logical_and_expr AND_OP inclusive_or_expr)  : (list 'AND_OP $1 $3) 
+    (inclusive_or_expr)                         : $1
+    (logical_and_expr AND_OP inclusive_or_expr) : (list 'AND_OP $1 $3)
     )
 
    (logical_or_expr
-    (logical_and_expr)                         : $1
-    (logical_or_expr OR_OP logical_and_expr)   : (list 'OR_OP $1 $3)
+    (logical_and_expr)                       : $1
+    (logical_or_expr OR_OP logical_and_expr) : (list 'OR_OP $1 $3)
     )
 
    (conditional_expr
-    (logical_or_expr)                                           : $1
-    (logical_or_expr ? logical_or_expr COLON conditional_expr)  : (list '? $1 $3 $5)
+    (logical_or_expr)                                          : $1
+    (logical_or_expr ? logical_or_expr COLON conditional_expr) : (list '? $1 $3 $5)
     )
 
    (assignment_expr
     (conditional_expr)                                : $1
-    (unary_expr assignment_operator assignment_expr)  : (list $1 $2 $3)
+    (LPAREN compound_statement RPAREN)                : $2      ; ???
+    (unary_expr assignment_operator assignment_expr)  : (list $2 $1 $3)
     )
 
-
    (assignment_operator
-    (=)
-    (MUL_ASSIGN)
-    (DIV_ASSIGN)
-    (MOD_ASSIGN)
-    (ADD_ASSIGN)
-    (SUB_ASSIGN)
-    (LEFT_ASSIGN)
-    (RIGHT_ASSIGN)
-    (AND_ASSIGN)
-    (XOR_ASSIGN)
-    (OR_ASSIGN)
+    (=)                    : '=
+    (MUL_ASSIGN)           : 'MUL_ASSIGN
+    (DIV_ASSIGN)           : 'DIV_ASSIGN
+    (MOD_ASSIGN)           : 'MOD_ASSIGN
+    (ADD_ASSIGN)           : 'ADD_ASSIGN
+    (SUB_ASSIGN)           : 'SUB_ASSIGN
+    (LEFT_ASSIGN)          : 'LEFT_ASSIGN
+    (RIGHT_ASSIGN)         : 'RIGHT_ASSIGN
+    (AND_ASSIGN)           : 'AND_ASSIGN
+    (XOR_ASSIGN)           : 'XOR_ASSIGN
+    (OR_ASSIGN)            : 'OR_ASSIGN
     )
 
    (expr
-    (assignment_expr)                : (list $1)
-    (expr COMMA assignment_expr)     : (append $1 (list $1))
+    (assignment_expr)                : $1
+    (expr COMMA assignment_expr)     : (append $1 $3)
     )
 
-
    (constant_expr
-    (conditional_expr)
+    (conditional_expr)               : $1
+    )
+
+   (declaration
+    (declaration_specifiers SEMICOLON)                                 : (list 'declaration $1 #f)
+    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'declaration $1 $2)
+    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'declaration $1 $2) ; ignore asm
+    )
+
+   (asm_label
+    (ASM LPAREN RPAREN)
+    (ASM LPAREN string_list RPAREN)
+    )
+
+   (declaration_specifiers
+    (storage_class_specifier)                            : (list $1 #f #f)
+    (storage_class_specifier declaration_specifiers2)    : (list $1 #f $2)
+    (declaration_specifiers2)                            : (list #f #f $1)
+    )
+
+   (declaration_specifiers2
+    (type_specifier)                                     : (list $1)
+    (type_specifier declaration_specifiers2)             : (cons $1 $2)
+    (type_qualifier)                                     : (list $1)
+    (type_qualifier declaration_specifiers2)             : (cons $1 $2)
+    (function_specifier)                                 : (list $1)
+    (function_specifier declaration_specifiers2)         : (cons $1 $2)
+    )
+
+   (typedef_declarator_list
+    (typedef_declarator)                                  : (list $1)
+    (typedef_declarator_list COMMA typedef_declarator)    : (append $1 (list $3))
+    )
+
+   (init_declarator_list
+    (init_declarator)                                    : (list $1)
+    (init_declarator_list COMMA init_declarator)         : (append $1 (list $3))
+    )
+
+   (init_declarator
+    (declarator)                                         : (list $1 :init #f)
+    (declarator = initializer)                           : (list $1 :init $3)
+    )
+
+   (storage_class_specifier
+    (EXTERN)                    :  'EXTERN
+    (STATIC)                    :  'STATIC
+    (AUTO)                      :  'AUTO
+    (REGISTER)                  :  'REGISTER
+    )
+
+   (type_specifier
+    (VOID)                         :  'VOID
+    (CHAR)                         :  'CHAR
+    (SHORT)                        :  'SHORT
+    (INT)                          :  'INT
+    (LONG)                         :  'LONG
+    (FLOAT)                        :  'FLOAT
+    (DOUBLE)                       :  'DOUBLE
+    (SIGNED)                       :  'SIGNED
+    (UNSIGNED)                     :  'UNSIGNED
+    (struct_or_union_specifier)    :  $1
+    (enum_specifier)               :  $1
+    (TYPE_NAME)                    :  $1
+    (VA_LIST)                      :  'VA_LIST
     )
 
    (struct_or_union_specifier
-    (struct_or_union IDENTIFIER LCBRA struct_declaration_list RCBRA)
-    (struct_or_union LCBRA struct_declaration_list RCBRA)
-    (struct_or_union IDENTIFIER)
+    (struct_or_union IDENTIFIER LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)
+    (struct_or_union LCBRA RCBRA)                                    : (list $1 #f #f) ; XXX
+    (struct_or_union LCBRA struct_declaration_list RCBRA)            : (list $1 #f $3)
+    (struct_or_union IDENTIFIER)                                     : (list $1 $2 #f)
     )
 
    (struct_or_union
-    (STRUCT)
-    (UNION)
+    (STRUCT)                 : 'STRUCT
+    (UNION)                  : 'UNION
     )
 
    (struct_declaration_list
-    (struct_declaration)
-    (struct_declaration_list struct_declaration)
+    (struct_declaration)                           : (list $1)
+    (struct_declaration_list struct_declaration)   : (append $1 (list $2))
     )
 
    (struct_declaration
-    (type_specifier_list struct_declarator_list SEMICOLON)
+    (specifier_qualifier_list struct_declarator_list SEMICOLON) : (list 'struct-declaration $2 $1)
+    )
+
+   (specifier_qualifier_list
+    (type_specifier)                                : (list $1)
+    (type_qualifier)                                : (list $1)
+    (type_specifier specifier_qualifier_list)       : (cons $1 $2)
+    (type_qualifier specifier_qualifier_list)       : (cons $1 $2)
     )
 
    (struct_declarator_list
-    (struct_declarator)
-    (struct_declarator_list COMMA struct_declarator)
+    (struct_declarator)                                  : $1
+    (struct_declarator_list COMMA struct_declarator)     : (append $1 $3)
     )
 
    (struct_declarator
-    (declarator)
-    (COLON constant_expr)
-    (declarator COLON constant_expr)
+    (declarator)                          : (list 'struct-declarator $1 #f)
+    (COLON constant_expr)                 : (list 'struct-declarator #f $2)
+    (declarator COLON constant_expr)      : (list 'struct-declarator $1 $3)
     )
 
    (enum_specifier
-    (ENUM LCBRA enumerator_list RCBRA)
-    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)
-    (ENUM IDENTIFIER)
+    (ENUM LCBRA enumerator_list RCBRA)              : (list 'enum-specifier #f $3)
+    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)   : (list 'enum-specifier $2 $4)
+    (ENUM IDENTIFIER)                               : (list 'enum-specifier $2 #f)
     )
 
    (enumerator_list
-    (enumerator)
-    (enumerator_list COMMA enumerator)
+    (enumerator)                           : (list $1)
+    (enumerator_list COMMA enumerator)     : (append $1 (list $3))
     )
 
    (enumerator
-    (IDENTIFIER)
-    (IDENTIFIER = constant_expr)
+    (IDENTIFIER)                         : (list 'enumerator $1 #f)
+    (IDENTIFIER = constant_expr)         : (list 'enumerator $1 $3)
+    )
+
+   (type_qualifier
+    (CONST)                       :  'CONST
+    (VOLATILE)                    :  'VOLATILE
+    )
+
+   (function_specifier
+    (INLINE)                      :  'INLINE
+    (NORETURN)                    :  'NORETURN
+    )
+
+   (typedef_declarator
+    (pointer typedef_declarator2)  : (append $2 $1)
+    (typedef_declarator2)          : (append $1 (list 'non-pointer))
+    )
+
+   (typedef_declarator2
+    (IDENTIFIER)                                            : (list $1)
+    (TYPE_NAME)                                             : (list $1)
+    (LPAREN typedef_declarator RPAREN)                      : $2
+    (typedef_declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list 'array $3))
+    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array #f))
+    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function $3))
+    (typedef_declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list 'function $3))
+    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function #f))
     )
 
    (declarator
-    (declarator2)                 : (list 'declarator $1 #f)
-    (pointer declarator2)         : (list 'declarator $2 $1)
+    (pointer declarator2)         : (list $2 $1)
+    (declarator2)                 : (list $1 'non-pointer)
     )
 
    (declarator2
-    (IDENTIFIER)                  : $1
-    (LPAREN declarator RPAREN)               : (list 'cast $1)
-    (declarator2 LSBRA RSBRA)                : (list 'array $1 #f)
-    (declarator2 LSBRA constant_expr RSBRA)  : (list 'array $1 $3)
-    (declarator2 LPAREN RPAREN)                           : (list 'function $1 #f)
-    (declarator2 LPAREN parameter_type_list RPAREN)       : (list 'function $1 $3)
-    (declarator2 LPAREN parameter_identifier_list RPAREN) : (list 'function $1 $3)
+    (IDENTIFIER)                                    : $1
+    ;; (TYPE_NAME)                                     : $1  ; XXX gives a lot of Reduce/Reduce conflict
+    (LPAREN declarator RPAREN)                      : $2
+    (declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list 'array $3))
+    (declarator2 LSBRA RSBRA)                       : (append $1 (list 'array #f))
+    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function $3))
+    (declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list 'function $3))
+    (declarator2 LPAREN RPAREN)                     : (append $1 (list 'function #f))
     )
 
    (pointer
-    (*)
-    (* type_specifier_list)
-    (* pointer)
-    (* type_specifier_list pointer)
+    (*)                              : (list '*)
+    (* type_qualifier_list)          : (cons '* $2)
+    (* pointer)                      : (list '* '*)
+    (* type_qualifier_list pointer)  : (append (cons '* $2) $3)
     )
 
-   (type_specifier_list
-    (type_specifier)                           : (list $1)
-    (type_specifier_list type_specifier)       : (append $1 (list $2))
-    )
-
-   (parameter_identifier_list
-    (identifier_list)
-    (identifier_list COMMA ELLIPSIS)
-    )
-
-   (identifier_list
-    (IDENTIFIER)
-    (identifier_list COMMA IDENTIFIER)
+   (type_qualifier_list
+    (type_qualifier)                           : (list $1)
+    (type_qualifier_list type_qualifier)       : (append $1 (list $2))
     )
 
    (parameter_type_list
@@ -349,32 +399,37 @@
     )
 
    (parameter_declaration
-    (type_specifier_list declarator)     : (list $1 $2)
-    (type_name)                          : $1
+    (declaration_specifiers declarator)          : (list $1 $2)
+    (declaration_specifiers abstract_declarator) : (list $1 $2)
+    (declaration_specifiers)                     : (list $1 #f)
+    )
+
+   (identifier_list
+    (IDENTIFIER)                              : (list $1)
+    (identifier_list COMMA IDENTIFIER)        : (append $1 (list $3))
     )
 
    (type_name
-    (type_specifier_list)                       : (list 'type-name $1 #f)
-    (type_specifier_list abstract_declarator)   : (list 'type-name $1 $2)
+    (specifier_qualifier_list)                       : (list 'type-name $1 #f)
+    (specifier_qualifier_list abstract_declarator)   : (list 'type-name $1 $2)
     )
 
    (abstract_declarator
-    (pointer)
-    (abstract_declarator2)
-    (pointer abstract_declarator2)
+    (pointer)                          : (list $1)
+    (abstract_declarator2)             : (list $1)
+    (pointer abstract_declarator2)     : (list $1 $2)
     )
 
-
    (abstract_declarator2
-    (LPAREN abstract_declarator RPAREN)
-    (LSBRA RSBRA)
-    (LSBRA constant_expr RSBRA)
-    (abstract_declarator2 LSBRA RSBRA)
-    (abstract_declarator2 LSBRA constant_expr RSBRA)
-    (LPAREN RPAREN)
-    (LPAREN parameter_type_list RPAREN)
-    (abstract_declarator2 LPAREN RPAREN)
-    (abstract_declarator2 LPAREN parameter_type_list RPAREN)
+    (LPAREN abstract_declarator RPAREN)                      : $2
+    (LSBRA RSBRA)                                            : (list 'array  #f #f)
+    (LSBRA constant_expr RSBRA)                              : (list 'array  #f $2)
+    (abstract_declarator2 LSBRA RSBRA)                       : (list 'array  $1 #f)
+    (abstract_declarator2 LSBRA constant_expr RSBRA)         : (list 'array  $1 $3)
+    (LPAREN RPAREN)                                          : (list 'function #f #f)
+    (LPAREN parameter_type_list RPAREN)                      : (list 'function #f $2)
+    (abstract_declarator2 LPAREN RPAREN)                     : (list 'function $1 #f)
+    (abstract_declarator2 LPAREN parameter_type_list RPAREN) : (list 'function $1 $3)
     )
 
    (initializer
@@ -385,7 +440,7 @@
 
    (initializer_list
     (initializer)                         : (list $1)
-    (initializer_list COMMA initializer)  : (append $1 (list $1))
+    (initializer_list COMMA initializer)  : (append $1 (list $3))
     )
 
    (statement
@@ -399,7 +454,7 @@
 
    (labeled_statement
     (IDENTIFIER COLON statement)              : (list 'SET-LABEL $1 $3)
-    (CASE constant_expr COLON statement)      : (list 'CASE $2 $4) 
+    (CASE constant_expr COLON statement)      : (list 'CASE $2 $4)
     (DEFAULT COLON statement)                 : (list 'DEFAULT $3)
     )
 
@@ -424,7 +479,7 @@
    (expression_statement
     (SEMICOLON)                      : '(NOP)
     (expr SEMICOLON)                 : $1
-    (error SEMICOLON)
+    ;(error SEMICOLON)
     )
 
    (selection_statement
@@ -434,16 +489,10 @@
     )
 
    (iteration_statement
-    (WHILE LPAREN expr RPAREN statement)                             : (list 'WHILE $3 $5)
-    (DO statement WHILE LPAREN expr RPAREN SEMICOLON)                : (list 'DO $2 $5)
-    (FOR LPAREN SEMICOLON SEMICOLON RPAREN statement)                : (list 'FOR #f #f #f $6)
-    (FOR LPAREN SEMICOLON SEMICOLON expr RPAREN statement)           : (list 'FOR #f #f $5 $7)
-    (FOR LPAREN SEMICOLON expr SEMICOLON RPAREN statement)           : (list 'FOR #f $4 #f $7)
-    (FOR LPAREN SEMICOLON expr SEMICOLON expr RPAREN statement)      : (list 'FOR #f $4 $6 $8)
-    (FOR LPAREN expr SEMICOLON SEMICOLON RPAREN statement)           : (list 'FOR $3 #f #f $7)
-    (FOR LPAREN expr SEMICOLON SEMICOLON expr RPAREN statement)      : (list 'FOR $3 #f $6 $8)
-    (FOR LPAREN expr SEMICOLON expr SEMICOLON RPAREN statement)      : (list 'FOR $3 $5 #f $8)
-    (FOR LPAREN expr SEMICOLON expr SEMICOLON expr RPAREN statement) : (list 'FOR $3 $5 $7 $9)
+    (WHILE LPAREN expr RPAREN statement)                                         : (list 'WHILE $3 $5)
+    (DO statement WHILE LPAREN expr RPAREN SEMICOLON)                            : (list 'DO $2 $5)
+    (FOR LPAREN expression_statement expression_statement RPAREN statement)      : (list 'FOR $3 $4 #f $6)
+    (FOR LPAREN expression_statement expression_statement expr RPAREN statement) : (list 'FOR $3 $4 $5 $7)
     )
 
    (jump_statement
@@ -461,6 +510,7 @@
     (DOUBLE-CONSTANT)      : $1
     (LONG-DOUBLE-CONSTANT) : $1
     )
+
    ))
 
 (define (pppp v)
@@ -472,13 +522,13 @@
                   (if (pair? x)
                       (begin
                         (dsp "(")
-                        (ff x (+ n 4))
+                        (ff x (+ n 2))
                         (dsp ")"))
                       (wri x)))
                 v)))
   (newline)
   (display "(")(newline)
-  (ff v 1)
+  (ff v 2)
   (display ")")(newline)
   )
 
@@ -498,18 +548,17 @@
   (cond ((null? e) '())
         (else
          (case (car e)
-           ((declaration) (do-decl (cadr e) (caddr e)))
+           ((define-type) (do-define-type (cadr e) (caddr e)))
            (else '()))))
+  (newline)
   (pppp e))
 
-(define (do-decl declspecs init-list)
-  (let ((x (assoc-ref declspecs 'storage-class-specifier #f eq?)))
-    (print "xxx: " x)
-    (when (and x (eq? (caar x) 'TYPEDEF))
-      (let* ((y (cadar init-list))
-             (z (cadadr y)))
-        (print "yyy: " y)
-        (print "zzz: " z)
-        (register-typedef-for-c89-scan (string->symbol z))))))
+(define (do-define-type init-declarator-list declaration-specifiers)
+  (print "\ndo-define-type: " init-declarator-list)
+  (for-each (lambda (init-decl)
+              (let ((name (cadr (car init-decl))))
+                (print "do-define-type: adding: " name)
+                (register-typedef-for-c89-scan (string->symbol name))))
+            init-declarator-list))
 
 (provide "lang/c/c89-gram")

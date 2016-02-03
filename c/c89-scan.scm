@@ -158,6 +158,7 @@
     (inline   .  INLINE)
     (int      .  INT)
     (long     .  LONG)
+    (noreturn .  NORETURN)
     (register .  REGISTER)
     (return   .  RETURN)
     (short    .  SHORT)
@@ -172,7 +173,11 @@
     (void     .  VOID)
     (volatile .  VOLATILE)
     (while    .  WHILE)
-    (__builtin_va_list . __BUILTIN_VA_LIST)
+    (__asm             . ASM)
+    ;;(__attribute__   . ATTRIBUTE)
+    (__alignof__       . ALIGNOF)
+    (__builtin_va_list . VA_LIST)
+    (__builtin_va_arg  . VA_ARG)
     ))
 
 ;;
@@ -185,9 +190,11 @@
   (set! typedefed '()))
 
 (define (register-typedef-for-c89-scan id)
-  (unless (is-typedefed? id)
-    (push! typedefed id))
-  (print "register-typedef-for-c89-scan: added: " id))
+  (cond ((is-typedefed? id)
+         (print "register-typedef-for-c89-scan: duplicate: " id))
+        (else
+         (push! typedefed id)
+         (print "register-typedef-for-c89-scan: added: " id))))
 
 ;;
 (define (read-identifier ch lis)
@@ -198,7 +205,7 @@
       (if k
         (make-token k lis)
         (if (is-typedefed? s)
-          (make-token 'TYPEDEF-NAME lis)
+          (make-token 'TYPE_NAME lis)
           (make-token 'IDENTIFIER lis)))))
 
   (cond ((eof-object? ch) (return lis))
