@@ -190,11 +190,8 @@
   (set! typedefed '()))
 
 (define (register-typedef-for-c89-scan id)
-  (cond ((is-typedefed? id)
-         (print "register-typedef-for-c89-scan: duplicate: " id))
-        (else
-         (push! typedefed id)
-         (print "register-typedef-for-c89-scan: added: " id))))
+  (unless (is-typedefed? id)
+    (push! typedefed id)))
 
 ;;
 (define (read-identifier ch lis)

@@ -77,8 +77,8 @@
     )
 
    (string_list
-    (STRING)                       : (list $1)
-    (STRING string_list)           : (cons $1 $2)
+    (STRING)                       : (list 'string-list $1)
+    (string_list STRING)           : (append $1 (list $2))
     )
 
    (postfix_expr
@@ -216,9 +216,9 @@
     )
 
    (declaration
-    (declaration_specifiers SEMICOLON)                                 : (list 'declaration $1 #f)
-    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'declaration $1 $2)
-    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'declaration $1 $2) ; ignore asm
+    (declaration_specifiers SEMICOLON)                                 : (list 'declaration #f $1)
+    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'declaration $2 $1)
+    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'declaration $2 $1) ; ignore asm label
     )
 
    (asm_label
@@ -227,9 +227,9 @@
     )
 
    (declaration_specifiers
-    (storage_class_specifier)                            : (list $1 #f #f)
-    (storage_class_specifier declaration_specifiers2)    : (list $1 #f $2)
-    (declaration_specifiers2)                            : (list #f #f $1)
+    (storage_class_specifier)                            : (list $1 'w/o-declaration-specifiers )
+    (storage_class_specifier declaration_specifiers2)    : (list $1 $2)
+    (declaration_specifiers2)                            : (list 'w/o-storage-class-spefifier $1)
     )
 
    (declaration_specifiers2
@@ -350,36 +350,35 @@
     )
 
    (typedef_declarator2
-    (IDENTIFIER)                                            : (list $1)
-    (TYPE_NAME)                                             : (list $1)
+    (IDENTIFIER)                                            : (list (cadr $1))
+    (TYPE_NAME)                                             : (list (cadr $1))
     (LPAREN typedef_declarator RPAREN)                      : $2
-    (typedef_declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list 'array $3))
-    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array #f))
-    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function $3))
-    (typedef_declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list 'function $3))
-    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function #f))
+    (typedef_declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
+    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
+    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
+    (typedef_declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
+    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list #f 'function))
     )
 
    (declarator
-    (pointer declarator2)         : (list $2 $1)
-    (declarator2)                 : (list $1 'non-pointer)
+    (pointer declarator2)         : (append $2 $1)
+    (declarator2)                 : (append $1 (list 'non-pointer))
     )
 
    (declarator2
-    (IDENTIFIER)                                    : $1
-    ;; (TYPE_NAME)                                     : $1  ; XXX gives a lot of Reduce/Reduce conflict
+    (IDENTIFIER)                                    : (list (cadr $1))
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list 'array $3))
-    (declarator2 LSBRA RSBRA)                       : (append $1 (list 'array #f))
-    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function $3))
-    (declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list 'function $3))
-    (declarator2 LPAREN RPAREN)                     : (append $1 (list 'function #f))
+    (declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
+    (declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
+    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
+    (declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
+    (declarator2 LPAREN RPAREN)                     : (append $1 (list #f 'function))
     )
 
    (pointer
     (*)                              : (list '*)
     (* type_qualifier_list)          : (cons '* $2)
-    (* pointer)                      : (list '* '*)
+    (* pointer)                      : (cons '* $2)
     (* type_qualifier_list pointer)  : (append (cons '* $2) $3)
     )
 
@@ -399,14 +398,14 @@
     )
 
    (parameter_declaration
-    (declaration_specifiers declarator)          : (list $1 $2)
-    (declaration_specifiers abstract_declarator) : (list $1 $2)
-    (declaration_specifiers)                     : (list $1 #f)
+    (declaration_specifiers declarator)          : (list $2 $1)
+    (declaration_specifiers abstract_declarator) : (list $2 $1)
+    (declaration_specifiers)                     : (list #f $1)
     )
 
    (identifier_list
-    (IDENTIFIER)                              : (list $1)
-    (identifier_list COMMA IDENTIFIER)        : (append $1 (list $3))
+    (IDENTIFIER)                              : (list (cadr $1))
+    (identifier_list COMMA IDENTIFIER)        : (append $1 (list (cadr $3)))
     )
 
    (type_name
@@ -553,12 +552,33 @@
   (newline)
   (pppp e))
 
-(define (do-define-type init-declarator-list declaration-specifiers)
-  (print "\ndo-define-type: " init-declarator-list)
-  (for-each (lambda (init-decl)
-              (let ((name (cadr (car init-decl))))
-                (print "do-define-type: adding: " name)
-                (register-typedef-for-c89-scan (string->symbol name))))
-            init-declarator-list))
+(define type-table (make-hash-table 'eq?))
+
+(define (register-type id pointer declaration-specifiers)
+
+  (define (check t x)
+    (if (equal? t x)
+      (print "typedef: redefinition with the same definition: " id)
+      (print "typedef: redefinition with different definition: " id)))
+
+  (define (register id t)
+    (print "do-define-type: adding: " id " as: " t)
+    (hash-table-put! type-table id t)
+    (register-typedef-for-c89-scan id))
+
+
+  (let ((t (cons pointer declaration-specifiers))
+        (x (hash-table-get type-table id #f)))
+    (if x (check t x))
+    (register id t)))
+
+(define (do-define-type typedef-declarator-list declaration-specifiers)
+  (print "\ndo-define-type: " typedef-declarator-list)
+  (for-each (lambda (type-decl)
+              (let ((name (car type-decl)))
+                (register-type (string->symbol name)
+                               (cdr type-decl)
+                               declaration-specifiers)))
+            typedef-declarator-list))
 
 (provide "lang/c/c89-gram")
