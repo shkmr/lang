@@ -60,9 +60,17 @@
 
    (function_definition
     (declaration_specifiers declarator declaration_list compound_statement) : (list 'define-function $2 $1 $3 $4)
-    (declaration_specifiers declarator compound_statement)                  : (list 'define-function $2 $1 #f $3)
-    (declarator declaration_list compound_statement)                        : (list 'define-function $1 #f $2 $3)
-    (declarator compound_statement)                                         : (list 'define-function $1 #f #f $2)
+    (declaration_specifiers declarator compound_statement)                  : (list 'define-function $2 $1
+                                                                                    'w/o-declaration-list
+                                                                                    $3)
+    (declarator declaration_list compound_statement)                        : (list 'define-function $1
+                                                                                    'w/o-declaration-specifiers
+                                                                                    $2 $3)
+
+    (declarator compound_statement)                                         : (list 'define-function $1
+                                                                                    'w/o-declaration-list
+                                                                                    'w/o-declaration-specifiers
+                                                                                    $2)
     )
 
    (type_definition
