@@ -1,4 +1,9 @@
 ;;;
+;;;     C89 with some extensions and a few bugs.
+;;;
+;;;     BUGS
+;;;      1. Type redefinition (doing typedef for the same
+;;;         type-name more than once) does not work correctly.
 ;;;
 ;;;
 (define-module lang.c.c89-gram (extend lang.core)
@@ -8,6 +13,25 @@
 (select-module lang.c.c89-gram)
 
 (define c89-gram
+  ;;
+  ;;  Based on usenet/net.sources/ansi.c.grammar.Z
+  ;;
+  ;;    From: tps@sdchem.UUCP (Tom Stockfisch)
+  ;;    Newsgroups: net.sources
+  ;;    Subject: ANSI C draft yacc grammar
+  ;;    Message-ID: <645@sdchema.sdchem.UUCP>
+  ;;    Date: 3 Mar 87 21:31:17 GMT
+  ;;    References: <403@ubc-vision.UUCP>
+  ;;    Sender: news@sdchem.UUCP
+  ;;    Reply-To: tps@sdchemf.UUCP (Tom Stockfisch)
+  ;;    Organization: UC San Diego
+  ;;    Lines: 775
+  ;;
+  ;;  Updates can be found at:
+  ;;
+  ;;    http://www.quut.com/c/ANSI-C-grammar-y-2011.html
+  ;;    http://www.quut.com/c/ANSI-C-grammar-y-1999.html
+  ;;
   (lalr-parser
    (expect: 1)  ; IF-ELSE
    ;;(output: c89-gram "c89-gram.yy.scm")
