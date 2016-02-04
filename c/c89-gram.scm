@@ -444,26 +444,25 @@
     )
 
    (statement
-    (labeled_statement)                : $1
-    (compound_statement)               : $1
-    (expression_statement)             : $1
-    (selection_statement)              : $1
-    (iteration_statement)              : $1
-    (jump_statement)                   : $1
+    (labeled_statement)                   : $1
+    (compound_statement)                  : $1
+    (expression_statement)                : $1
+    (selection_statement)                 : $1
+    (iteration_statement)                 : $1
+    (jump_statement)                      : $1
     )
 
    (labeled_statement
-    (IDENTIFIER COLON statement)              : (list 'SET-LABEL $1 $3)
-    (CASE constant_expr COLON statement)      : (list 'CASE $2 $4)
-    (DEFAULT COLON statement)                 : (list 'DEFAULT $3)
+    (IDENTIFIER COLON statement)          : (append (list 'SET-LABEL $1) $3)
+    (CASE constant_expr COLON statement)  : (append (list 'CASE $2)      $4)
+    (DEFAULT COLON statement)             : (append (list 'DEFAULT)      $3)
     )
 
    (compound_statement
-    (LCBRA RCBRA)                                 : (list 'BLOCK #f '((NOP)))
-    (LCBRA statement_list RCBRA)                  : (list 'BLOCK #f $2)
-    (LCBRA declaration_list RCBRA)                : (list 'BLOCK $2 #f)
+    (LCBRA RCBRA)                                 : (list 'BLOCK 'w/o-declaration-list '((NOP)))
+    (LCBRA statement_list RCBRA)                  : (list 'BLOCK 'w/o-declaration-list $2)
+    (LCBRA declaration_list RCBRA)                : (list 'BLOCK $2 'w/o-statement-list)
     (LCBRA declaration_list statement_list RCBRA) : (list 'BLOCK $2 $3)
-    (error RCBRA)
     )
 
    (declaration_list
@@ -479,7 +478,6 @@
    (expression_statement
     (SEMICOLON)                      : '(NOP)
     (expr SEMICOLON)                 : $1
-    ;(error SEMICOLON)
     )
 
    (selection_statement
