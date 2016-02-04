@@ -281,10 +281,10 @@
     )
 
    (storage_class_specifier
-    (EXTERN)                    :  'EXTERN
-    (STATIC)                    :  'STATIC
-    (AUTO)                      :  'AUTO
-    (REGISTER)                  :  'REGISTER
+    (EXTERN)                       :  'EXTERN
+    (STATIC)                       :  'STATIC
+    (AUTO)                         :  'AUTO
+    (REGISTER)                     :  'REGISTER
     )
 
    (type_specifier
@@ -311,13 +311,13 @@
     )
 
    (struct_or_union
-    (STRUCT)                 : 'STRUCT
-    (UNION)                  : 'UNION
+    (STRUCT)                       : 'STRUCT
+    (UNION)                        : 'UNION
     )
 
    (struct_declaration_list
-    (struct_declaration)                           : (list $1)
-    (struct_declaration_list struct_declaration)   : (append $1 (list $2))
+    (struct_declaration)                          : (list $1)
+    (struct_declaration_list struct_declaration)  : (append $1 (list $2))
     )
 
    (struct_declaration
@@ -325,15 +325,15 @@
     )
 
    (specifier_qualifier_list
-    (type_specifier)                                : (list $1)
-    (type_qualifier)                                : (list $1)
-    (type_specifier specifier_qualifier_list)       : (cons $1 $2)
-    (type_qualifier specifier_qualifier_list)       : (cons $1 $2)
+    (type_specifier)                              : (list $1)
+    (type_qualifier)                              : (list $1)
+    (type_specifier specifier_qualifier_list)     : (cons $1 $2)
+    (type_qualifier specifier_qualifier_list)     : (cons $1 $2)
     )
 
    (struct_declarator_list
-    (struct_declarator)                                  : $1
-    (struct_declarator_list COMMA struct_declarator)     : (append $1 $3)
+    (struct_declarator)                              : $1
+    (struct_declarator_list COMMA struct_declarator) : (append $1 $3)
     )
 
    (struct_declarator
@@ -350,13 +350,13 @@
     )
 
    (enumerator_list
-    (enumerator)                           : (list $1)
-    (enumerator_list COMMA enumerator)     : (append $1 (list $3))
+    (enumerator)                        : (list $1)
+    (enumerator_list COMMA enumerator)  : (append $1 (list $3))
     )
 
    (enumerator
-    (IDENTIFIER)                         : (list 'enumerator $1 'w/o-constant-expr)
-    (IDENTIFIER = constant_expr)         : (list 'enumerator $1 $3)
+    (IDENTIFIER)                        : (list 'enumerator $1 'w/o-constant-expr)
+    (IDENTIFIER = constant_expr)        : (list 'enumerator $1 $3)
     )
 
    (type_qualifier
@@ -370,8 +370,8 @@
     )
 
    (typedef_declarator
-    (pointer typedef_declarator2)  : (append $2 $1)
-    (typedef_declarator2)          : (append $1 (list 'non-pointer))
+    (pointer typedef_declarator2) : (append $2 $1)
+    (typedef_declarator2)         : (append $1 (list 'non-pointer))
     )
 
    (typedef_declarator2
@@ -386,8 +386,8 @@
     )
 
    (declarator
-    (pointer declarator2)         : (append $2 $1)
-    (declarator2)                 : (append $1 (list 'non-pointer))
+    (pointer declarator2)          : (append $2 $1)
+    (declarator2)                  : (append $1 (list 'non-pointer))
     )
 
    (declarator2
@@ -408,13 +408,13 @@
     )
 
    (type_qualifier_list
-    (type_qualifier)                           : (list $1)
-    (type_qualifier_list type_qualifier)       : (append $1 (list $2))
+    (type_qualifier)                             : (list $1)
+    (type_qualifier_list type_qualifier)         : (append $1 (list $2))
     )
 
    (parameter_type_list
-    (parameter_list)                     : (list 'parameter-type-list $1 #f)
-    (parameter_list COMMA ELLIPSIS)      : (list 'parameter-type-list $1 #t)
+    (parameter_list)                             : (list 'parameter-type-list $1 #f)
+    (parameter_list COMMA ELLIPSIS)              : (list 'parameter-type-list $1 #t)
     )
 
    (parameter_list
@@ -434,14 +434,14 @@
     )
 
    (type_name
-    (specifier_qualifier_list)                       : (list 'type-name $1 #f)
-    (specifier_qualifier_list abstract_declarator)   : (list 'type-name $1 $2)
+    (specifier_qualifier_list)                      : (list 'type-name $1 #f)
+    (specifier_qualifier_list abstract_declarator)  : (list 'type-name $1 $2)
     )
 
    (abstract_declarator
-    (pointer)                          : (list $1)
-    (abstract_declarator2)             : (list $1)
-    (pointer abstract_declarator2)     : (list $1 $2)
+    (pointer)                                                : (list $1)
+    (abstract_declarator2)                                   : (list $1)
+    (pointer abstract_declarator2)                           : (list $1 $2)
     )
 
    (abstract_declarator2
@@ -554,18 +554,7 @@
   (display ")")(newline)
   )
 
-(define (ppvec v)
-  (define (ff v n)
-    (let ((sp (make-string n #\|)))
-      (define (wri x) (display sp) (write x) (newline))
-      (vector-for-each (lambda (x)
-                  (if (vector? x)
-                      (ff x (+ n 1))
-                      (wri x)))
-                v)))
-  (newline)
-  (ff v 1))
-
+;;
 (define (compile e)
   (cond ((null? e) '())
         (else
@@ -575,6 +564,7 @@
   (newline)
   (pppp e))
 
+;;
 (define type-table (make-hash-table 'eq?))
 
 (define (register-type id pointer declaration-specifiers)
@@ -588,7 +578,6 @@
     (print "do-define-type: adding: " id " as: " t)
     (hash-table-put! type-table id t)
     (register-typedef-for-c89-scan id))
-
 
   (let ((t (cons pointer declaration-specifiers))
         (x (hash-table-get type-table id #f)))
