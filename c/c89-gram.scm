@@ -570,6 +570,10 @@
 (define (register-type id pointer declaration-specifiers)
 
   (define (check t x)
+    ;;
+    ;;  TODO: We likely need to resolve all the typef'ed
+    ;;  types before comparing.  We just use equal? for now.
+    ;;
     (if (equal? t x)
       (print "typedef: redefinition with the same definition: " id)
       (print "typedef: redefinition with different definition: " id)))
