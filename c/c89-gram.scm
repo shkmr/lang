@@ -60,21 +60,13 @@
 
    (function_definition
     (declaration_specifiers declarator declaration_list compound_statement) : (list 'define-function $2 $1 $3 $4)
-    (declaration_specifiers declarator compound_statement)                  : (list 'define-function $2 $1
-                                                                                    'w/o-declaration-list
-                                                                                    $3)
-    (declarator declaration_list compound_statement)                        : (list 'define-function $1
-                                                                                    'w/o-declaration-specifiers
-                                                                                    $2 $3)
-
-    (declarator compound_statement)                                         : (list 'define-function $1
-                                                                                    'w/o-declaration-list
-                                                                                    'w/o-declaration-specifiers
-                                                                                    $2)
+    (declaration_specifiers declarator compound_statement) : (list 'define-function $2 $1 'w/o-declaration-list $3)
+    (declarator declaration_list compound_statement) : (list 'define-function $1 'w/o-declaration-specifiers $2 $3)
+    (declarator compound_statement) : (list 'define-function $1 'w/o-declaration-list 'w/o-declaration-specifiers $2)
     )
 
    (type_definition
-    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON)      : (list 'define-type $3 $2)
+    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) : (list 'define-type $3 $2)
     )
 
    (primary_expr
@@ -215,16 +207,16 @@
     )
 
    (expr
-    (assignment_expr)                : $1
-    (expr COMMA assignment_expr)     : (append $1 $3)
+    (assignment_expr)             : $1
+    (expr COMMA assignment_expr)  : (append $1 $3)
     )
 
    (constant_expr
-    (conditional_expr)               : $1
+    (conditional_expr)            : $1
     )
 
    (declaration
-    (declaration_specifiers SEMICOLON)                                 : (list 'declaration #f $1)
+    (declaration_specifiers SEMICOLON)                                 : (list 'declaration 'w/o-init-declarator-list $1)
     (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'declaration $2 $1)
     (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'declaration $2 $1) ; ignore asm label
     )
@@ -291,7 +283,7 @@
     (struct_or_union IDENTIFIER LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)
     (struct_or_union LCBRA RCBRA)                                    : (list $1 #f #f) ; XXX
     (struct_or_union LCBRA struct_declaration_list RCBRA)            : (list $1 #f $3)
-    (struct_or_union IDENTIFIER)                                     : (list $1 $2 #f)
+    (struct_or_union IDENTIFIER)                                     : (list $1 $2 'w/o-struct-declaration-list)
     )
 
    (struct_or_union
@@ -305,7 +297,7 @@
     )
 
    (struct_declaration
-    (specifier_qualifier_list struct_declarator_list SEMICOLON) : (list 'struct-declaration $2 $1)
+    (specifier_qualifier_list struct_declarator_list SEMICOLON) : (list $2 $1)
     )
 
    (specifier_qualifier_list
@@ -321,15 +313,16 @@
     )
 
    (struct_declarator
-    (declarator)                          : (list 'struct-declarator $1 #f)
-    (COLON constant_expr)                 : (list 'struct-declarator #f $2)
-    (declarator COLON constant_expr)      : (list 'struct-declarator $1 $3)
+    (declarator)                          : (list $1 'w/o-bitfield)
+    (COLON constant_expr)                 : (list 'w/o-declarator $2)
+    (declarator COLON constant_expr)      : (list $1 $3)
     )
 
    (enum_specifier
-    (ENUM LCBRA enumerator_list RCBRA)              : (list 'enum-specifier #f $3)
-    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)   : (list 'enum-specifier $2 $4)
-    (ENUM IDENTIFIER)                               : (list 'enum-specifier $2 #f)
+    (ENUM LCBRA enumerator_list RCBRA)                  : (list 'ENUM #f $3)
+    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)       : (list 'ENUM $2 $4)
+    (ENUM IDENTIFIER LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $2 $4)
+    (ENUM IDENTIFIER)                                   : (list 'ENUM $2 #f)
     )
 
    (enumerator_list
@@ -338,7 +331,7 @@
     )
 
    (enumerator
-    (IDENTIFIER)                         : (list 'enumerator $1 #f)
+    (IDENTIFIER)                         : (list 'enumerator $1 'w/o-constant-expr)
     (IDENTIFIER = constant_expr)         : (list 'enumerator $1 $3)
     )
 
