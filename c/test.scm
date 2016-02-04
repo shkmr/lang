@@ -135,8 +135,8 @@
 
 (for-each (lambda (f)
             (test* f 0 (syntax-check f)))
-          #;(test-c-files 1)
-          (list "c/foo.c" "c/hello.c")
+          #;(take (test-c-files 1) 10)
+          (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c")
           )
 
 (test-end :exit-on-failure #t)

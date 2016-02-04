@@ -1,3 +1,6 @@
+#include <signal.h> /* we somewhat need this to successfully parse stdint.h */
+#include <stdint.h>
+
 typedef signed char int8_a;
 typedef unsigned char int8_b, int8_x;
 typedef unsigned char int8_c, *int8_y;
