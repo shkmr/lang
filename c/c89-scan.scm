@@ -3,6 +3,7 @@
 ;;;
 (define-module lang.c.c89-scan (extend lang.core)
   (use gauche.parameter)
+  (use srfi-13)
   (export c89-scan
           register-typedef-for-c89-scan
           reset-typedef-for-c89-scan
@@ -26,9 +27,35 @@
 ;;;
 ;;;
 ;;;
+(define filename  (make-parameter #f))
+(define base-line (make-parameter (cons 0 0)))
+
+(define (get-filename)
+  (if (filename) 
+    (filename)
+    (port-name (current-input-port))))
+
+(define (get-lineno)
+  (let ((m (port-current-line (current-input-port))))
+    (+ (car (base-line))
+       (- m (cdr (base-line))))))
+
+(define (do-sharp str) 
+  (let* ((x   (string-tokenize str))
+         (len (length x)))
+    (cond ((and (> len 2) (string=? (list-ref x 0) "#"))
+           (let ((n (string->number (list-ref x 1)))
+                 (f (list-ref x 2)))
+             (when n
+               (base-line (cons n (port-current-line (current-input-port))))
+               (filename f))))
+          (else #f))))
+;;;
+;;;
+;;;
 (define (c89-scan)
-  (parameterize ((file (port-name (current-input-port)))
-                 (line (port-current-line (current-input-port))))
+  (parameterize ((file (get-filename))
+                 (line (get-lineno)))
     (let ((ch (read-char)))
       (cond ((eof-object? ch) ch)
             ((char-whitespace? ch) (read-whitespaces (peek-char) (list ch)))
@@ -41,7 +68,10 @@
             ((char=? #\} ch)  (make-token 'RCBRA      (list ch)))
             ((char=? #\[ ch)  (make-token 'LSBRA      (list ch)))
             ((char=? #\] ch)  (make-token 'RSBRA      (list ch)))
-            ((char=? #\# ch)  (read-sharp (peek-char) (list ch)))
+            ((char=? #\# ch)  
+             (let ((x (read-sharp (peek-char) (list ch))))
+               (do-sharp (token-string x))
+               x))
             ((char=? #\/ ch)
              (let ((x (peek-char)))
                (cond ((eof-object? x) (make-token #\/ (list ch)))
