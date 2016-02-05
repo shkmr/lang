@@ -134,12 +134,12 @@
     )
 
    (unary_operator
-    (&)                   : '&
-    (*)                   : '*
-    (+)                   : '+
-    (-)                   : '-
-    (~)                   : '~
-    (!)                   : '!
+    (&)                   : 'unary-&
+    (*)                   : 'unary-*
+    (+)                   : 'unary-+
+    (-)                   : 'unary--
+    (~)                   : 'unary-~
+    (!)                   : 'unary-!
     )
 
    (cast_expr
@@ -182,7 +182,7 @@
 
    (and_expr
     (equality_expr)                          : $1
-    (and_expr & equality_expr)               : (list '^ $1 $3)
+    (and_expr & equality_expr)               : (list '& $1 $3)
     )
 
    (exclusive_or_expr
