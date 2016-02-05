@@ -68,12 +68,12 @@
 
    (program
     ()
-    (file)
+    (file)                       : $1
     )
 
-   (file
-    (external_declaration)
-    (file external_declaration)
+    (file
+    (external_declaration)       : (list $1)
+    (file external_declaration)  : (append $1 $2)
     )
 
    (external_declaration
@@ -562,7 +562,8 @@
            ((define-type) (do-define-type (cadr e) (caddr e)))
            (else '()))))
   (newline)
-  (pppp e))
+  (pppp e)
+  e)
 
 ;;
 (define type-table (make-hash-table 'eq?))
@@ -592,7 +593,7 @@
   (print "\ndo-define-type: " typedef-declarator-list)
   (for-each (lambda (type-decl)
               (let ((name (car type-decl)))
-                (register-type (string->symbol name)
+                (register-type (string->symbol (token-string name))
                                (cdr type-decl)
                                declaration-specifiers)))
             typedef-declarator-list))

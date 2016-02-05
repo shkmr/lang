@@ -19,6 +19,10 @@
   (file   token-file)
   (line   token-line))
 
+(define-method write-object ((obj token) port)
+  (display #"~(token-file obj):~(token-line obj):~(token-type obj):" port)
+  (write (token-string obj) port))
+
 (define file (make-parameter #f))
 (define line (make-parameter #f))
 

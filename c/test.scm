@@ -119,7 +119,38 @@
         (else
          (list (token-type x)
                (token-type x)
-               (token-string x)))))))
+               x
+               #;(token-string x)
+               ))))))
+
+;;
+(define (test-gram str expect)
+  (define (conv lis)
+    (map (lambda (x)
+           (cond ((is-a? x token) (token-string x))
+                 ((pair? x) (conv x))
+                 (else x)))
+         lis))
+  (test* str expect (with-input-from-string str
+                  (lambda ()
+                    (conv (c89-gram cscan error))))))
+
+;;
+(test-gram "char a;"                             '( (declaration ( (("a" non-pointer) :init #f) )
+                                                                 (w/o-storage-class-spefifier (CHAR))) ))
+(test-gram "char *a;"                            '( (declaration ( (("a" *) :init #f) )
+                                                                 (w/o-storage-class-spefifier (CHAR))) ))
+(test-gram "static char *a;"                     '( (declaration ( (("a" *) :init #f) )
+                                                                 (STATIC (CHAR))) ))
+(test-gram "extern char a, *b;"                  '( (declaration ( (("a" non-pointer) :init #f)
+                                                                   (("b" *)           :init #f) )
+                                                                 (EXTERN (CHAR))) ))
+(test-gram "extern char a, **b;"                 '( (declaration ( (("a" non-pointer) :init #f)
+                                                                   (("b" * *)         :init #f) )
+                                                                 (EXTERN (CHAR))) ))
+(test-gram "extern char a, ***b;"                '( (declaration ( (("a" non-pointer) :init #f)
+                                                                   (("b" * * *)       :init #f) )
+                                                                 (EXTERN (CHAR))) ))
 
 (use ggc.port.mirroring)
 (define (syntax-check file)
