@@ -375,8 +375,8 @@
     )
 
    (typedef_declarator2
-    (IDENTIFIER)                                            : (list (cadr $1))
-    (TYPE_NAME)                                             : (list (cadr $1))
+    (IDENTIFIER)                                            : (list $1)
+    (TYPE_NAME)                                             : (list $1)
     (LPAREN typedef_declarator RPAREN)                      : $2
     (typedef_declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
     (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
@@ -391,7 +391,7 @@
     )
 
    (declarator2
-    (IDENTIFIER)                                    : (list (cadr $1))
+    (IDENTIFIER)                                    : (list $1)
     (LPAREN declarator RPAREN)                      : $2
     (declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
     (declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
@@ -429,8 +429,8 @@
     )
 
    (identifier_list
-    (IDENTIFIER)                              : (list (cadr $1))
-    (identifier_list COMMA IDENTIFIER)        : (append $1 (list (cadr $3)))
+    (IDENTIFIER)                              : (list $1)
+    (identifier_list COMMA IDENTIFIER)        : (append $1 (list $3))
     )
 
    (type_name
