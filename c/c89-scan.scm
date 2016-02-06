@@ -1,5 +1,5 @@
 ;;;
-;;;
+;;; useful link : http://careferencemanual.com
 ;;;
 (define-module lang.c.c89-scan (extend lang.core)
   (use gauche.parameter)
@@ -16,7 +16,7 @@
           ))
 (select-module lang.c.c89-scan)
 
-;;; gcc of GCC allows dollar sign
+;;; GCC allows dollar sign
 ;;(define initial-identifier-charset #[A-Za-z_])
 ;;(define identifier-charset         #[A-Za-z_0-9])
 (define initial-identifier-charset   #[A-Za-z_$])
@@ -75,7 +75,7 @@
              (let ((x (peek-char)))
                (cond ((eof-object? x) (make-token #\/ (list ch)))
                      ((char=? #\*  x) (read-char) (read-/*-comment (peek-char) (list x ch)))
-                     ((char=? #\/  x) (read-char) (read-//-comment (peek-char) (list x ch)))
+                     ((char=? #\/  x) (read-char) (read-//-comment (peek-char) (list x ch))) ; c99
                      (else (read-operator (peek-char) (list ch))))))
 
             ((char=? #\0 ch)
@@ -185,11 +185,11 @@
     (for      .  FOR)
     (goto     .  GOTO)
     (if       .  IF)
-    (inline   .  INLINE)
+    (inline   .  INLINE)    ; c99 but needed to process standard header file
     (int      .  INT)
     (long     .  LONG)
-    (noreturn .  NORETURN)
     (register .  REGISTER)
+    ;(restrict .  RESTRICT)   ; c99
     (return   .  RETURN)
     (short    .  SHORT)
     (signed   .  SIGNED)
@@ -203,6 +203,9 @@
     (void     .  VOID)
     (volatile .  VOLATILE)
     (while    .  WHILE)
+    ;(_Bool    .  BOOL)       ; c99
+    ;(_Complex .  COMPLEX)    ; c99
+    ;(_Imaginary . IMAGINARY) ; c99
     (__asm             . ASM)
     ;;(__attribute__   . ATTRIBUTE)
     (__alignof__       . ALIGNOF)
