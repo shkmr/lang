@@ -6,7 +6,6 @@
   (use gauche.uvector)
   (export gauche-read
           gauche-scan
-          print-token
           token-type
           token-string
           token-file

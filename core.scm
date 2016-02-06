@@ -32,11 +32,6 @@
                (file)
                (line)))
 
-(define (print-token token)
-  (display #"~(token-file token):~(token-line token):~(token-type token)")
-  (display ":") (write (token-string token)) (newline)
-  )
-
 (define (lis->string lis)
   (apply string (reverse lis)))
 

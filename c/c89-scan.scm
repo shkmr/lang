@@ -7,7 +7,6 @@
   (export c89-scan
           register-typedef-for-c89-scan
           reset-typedef-for-c89-scan
-          print-token
           token
           token-type
           token-string
