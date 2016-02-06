@@ -253,7 +253,7 @@
    (declaration_specifiers
     (storage_class_specifier)                            : (list $1 'w/o-declaration-specifiers )
     (storage_class_specifier declaration_specifiers2)    : (list $1 $2)
-    (declaration_specifiers2)                            : (list 'w/o-storage-class-spefifier $1)
+    (declaration_specifiers2)                            : (list 'w/o-storage-class-specifier $1)
     )
 
    (declaration_specifiers2

@@ -133,9 +133,9 @@
 
 ;;
 (test-gram "char a;"                    '( (declaration ( (((IDENTIFIER . "a") non-pointer) :init #f) )
-                                                        (w/o-storage-class-spefifier (CHAR))) ))
+                                                        (w/o-storage-class-specifier (CHAR))) ))
 (test-gram "char *a;"                   '( (declaration ( (((IDENTIFIER . "a") *) :init #f) )
-                                                        (w/o-storage-class-spefifier (CHAR))) ))
+                                                        (w/o-storage-class-specifier (CHAR))) ))
 (test-gram "static char *a;"            '( (declaration ( (((IDENTIFIER . "a") *) :init #f) )
                                                         (STATIC (CHAR))) ))
 (test-gram "extern char a, b;"          '( (declaration ( (((IDENTIFIER . "a") non-pointer) :init #f)
@@ -169,6 +169,10 @@
 (test-gram "extern char *(*a)();"       '( (declaration ( (((IDENTIFIER . "a") * #f function *) :init #f) )
                                                                  (EXTERN (CHAR))) ))
 
+(test-gram "char (*a)()=&foo;"        '( (declaration ( (((IDENTIFIER . "a") * #f function non-pointer)
+                                                                  :init (unary-& (IDENTIFIER . "foo"))) )
+                                                        (w/o-storage-class-specifier (CHAR))) ))
+
 (use ggc.port.mirroring)
 (define (syntax-check file)
   (reset-typedef-for-c89-scan)
@@ -184,7 +188,7 @@
 (for-each (lambda (f)
             (test* f 0 (syntax-check f)))
           #;(take (test-c-files 1) 10)
-          (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c")
+          (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c")
           )
 
 (test-end :exit-on-failure #t)
