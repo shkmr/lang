@@ -121,8 +121,7 @@
             ((char-set-contains? initial-identifier-charset ch) (read-identifier (peek-char) (list ch)))
             ((char-set-contains? operator-charset ch)           (read-operator   (peek-char) (list ch)))
             (else
-             ;; we put extra #\x for debugging purpose
-             (make-token 'illegal-char (list #\x ch)) ; or raise error?
+             (make-token 'illegal-char (list ch)) ; or raise error?
              )))))
 
 ;;;----------------------------------------------------------------
@@ -227,6 +226,8 @@
     (push! typedefed id)))
 
 ;;
+;; TODO: handle backslash-newline for non-cpp case.
+;;
 (define (read-identifier ch lis)
 
   (define (return lis)
@@ -262,6 +263,10 @@
     (( #\= #\| )     .  OR_ASSIGN   ) ; |=
     (( #\> #\> )     .  RIGHT_OP    )
     (( #\< #\< )     .  LEFT_OP     )
+    (( #\% #\< )     .  LCBRA       ) ; <%
+    (( #\> #\% )     .  RCBRA       ) ; %>
+    (( #\: #\< )     .  LSBRA       ) ; <:
+    (( #\> #\: )     .  RSBRA       ) ; :>
     (( #\> )         .  >           )
     (( #\< )         .  <           )
     (( #\+ #\+ )     .  INC_OP      )
@@ -288,6 +293,8 @@
     (( #\~     )     .  ~           )
     ))
 
+;;
+;; TODO: handle backslash-newline for non-cpp case.
 ;;
 (define (read-operator ch lis)
 
