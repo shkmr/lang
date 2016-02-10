@@ -1,5 +1,21 @@
 ;;;
+;;;    gauche-scan : tokenize Gauche program.
 ;;;
+;;;    Goal and limitation.
+;;;
+;;;      1) Reterns token with
+;;;
+;;;          1.0 Type of token (symbol, number, etc)
+;;;          1.1 filename, line number, and possibly column (which points the beginning of token string)
+;;;          1.2 string from which token is made of.
+;;;
+;;;      2) Whitespaces and comment is a token, not ignored.  So that
+;;;         application programs can reproduce original source code
+;;;         solely from tokens it receives.
+;;;
+;;;      3) Correctly tokenize correct Gauche programs,
+;;;         behavior on error will be different.
+;;;         (Incorrect input may return a token without raising error)
 ;;;
 (define-module lang.scheme.gauche (extend lang.core)
   (use gauche.parameter)
