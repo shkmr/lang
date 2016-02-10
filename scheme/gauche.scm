@@ -92,8 +92,10 @@
 ;;;
 ;;;
 (define (gauche-scan)
-  (parameterize ((file (port-name (current-input-port)))
-                 (line (port-current-line (current-input-port))))
+  (parameterize ((file   (port-name (current-input-port)))
+                 (line   (port-current-line (current-input-port)))
+                 (column (let1 x (port-current-column (current-input-port))
+                           (or x 0))))
     (let ((ch (read-char)))
       (cond ((eof-object? ch) ch)
             ((char-set-contains? #[(){}\[\]] ch) (make-token ch (list ch)))

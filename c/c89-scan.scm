@@ -35,9 +35,13 @@
     (port-name (current-input-port))))
 
 (define (get-lineno)
-  (let ((m (port-current-line (current-input-port))))
+  (let1 m (port-current-line (current-input-port))
     (+ (car (base-line))
        (- m (cdr (base-line))))))
+
+(define (get-column)
+  (let1 x (port-current-column (current-input-port))
+    (or x 0)))
 
 (define (do-sharp str) 
   (let* ((x   (string-tokenize str))
@@ -53,8 +57,9 @@
 ;;;
 ;;;
 (define (c89-scan)
-  (parameterize ((file (get-filename))
-                 (line (get-lineno)))
+  (parameterize ((file   (get-filename))
+                 (line   (get-lineno))
+                 (column (get-column)))
     (let ((ch (read-char)))
       (cond ((eof-object? ch) ch)
             ((char-whitespace? ch) (read-whitespaces (peek-char) (list ch)))

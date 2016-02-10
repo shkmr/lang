@@ -6,6 +6,22 @@
 (use lang.c.c89-scan)
 (test-module 'lang.c.c89-scan)
 
+;;;
+;;;
+;;;
+(define use-column-port (make-parameter #t))
+(use ggc.port.mirroring)
+(use ggc.port.column)
+(with-module lang.c.c89-scan (use ggc.port.column))
+(define (with-input-from-string/column str thunk)
+  (call-with-input-string str
+    (lambda (p)
+      (with-input-from-port/column p thunk))))
+
+
+;;;
+;;;
+;;;
 (define (scan str)
   (with-input-from-string str
     (lambda ()
@@ -127,9 +143,12 @@
                  ((pair? x) (conv x))
                  (else x)))
          lis))
-  (test* str expect (with-input-from-string str
-                  (lambda ()
-                    (conv (c89-gram cscan error))))))
+  (test* str expect ((if (use-column-port)
+                       with-input-from-string/column
+                       with-input-from-string)
+                     str
+                     (lambda ()
+                       (conv (c89-gram cscan error))))))
 
 ;;
 (test-gram "char a;"                    '( (declaration ( (((IDENTIFIER . "a") non-pointer) :init #f) )
@@ -173,22 +192,41 @@
                                                                   :init (unary-& (IDENTIFIER . "foo"))) )
                                                         (w/o-storage-class-specifier (CHAR))) ))
 
-(use ggc.port.mirroring)
+(define (with-cpp file thunk)
+  (with-input-from-process #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+    thunk))
+
 (define (syntax-check file)
   (reset-typedef-for-c89-scan)
-  (with-input-from-process #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+  (with-cpp file
     (lambda ()
       (with-input-from-port/mirroring-to-port
-       (current-input-port)
-       (current-output-port)
-       (lambda ()
-         (c89-gram cscan error)
-         0)))))
+          (current-input-port)
+          (current-output-port)
+        (lambda ()
+          (c89-gram cscan error)
+          0)))))
+
+(define (syntax-check/column file)
+  (reset-typedef-for-c89-scan)
+  (with-cpp file
+    (lambda ()
+      (with-input-from-port/mirroring-to-port
+          (current-input-port)
+          (current-output-port)
+        (lambda ()
+          (with-input-from-port/column (current-input-port)
+            (lambda ()
+              (c89-gram cscan error)
+              0)))))))
 
 (for-each (lambda (f)
-            (test* f 0 (syntax-check f)))
-          #;(take (test-c-files 1) 10)
-          (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c")
+            (if (use-column-port)
+              (test* f 0 (syntax-check/column f))
+              (test* f 0 (syntax-check f))))
+          (if #f
+            (take (test-c-files 1) 10)
+            (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c"))
           )
 
 (test-end :exit-on-failure #t)
