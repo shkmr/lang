@@ -98,18 +98,21 @@
 
 ;;(p? #t)
 (define (test-copy file)
-  (let ((x (with-input-from-file file
+  (let ((tmp (sys-tmpnam))
+        (x (with-input-from-file file
              (lambda ()
                (port-map (lambda (x)
                            (if (p?) (print-token x))
                            (token-string x))
                          c89-scan)))))
-    (with-output-to-file "fo.scm" (cut write-tree x))
-    (sys-system #"diff ~|file| fo.scm")))
+    (unwind-protect
+        (begin
+          (with-output-to-file tmp (cut write-tree x))
+          (sys-system #"diff ~|file| ~|tmp|"))
+      (sys-unlink tmp))))
 
 (use file.util)
 (use srfi-13)
-(use gauche.process)
 
 (define (test-c-files n)
   (case n
@@ -125,6 +128,8 @@
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
+
+(test-section "test gram")
 
 (define (cscan)
   (let ((x (c89-scan)))
@@ -191,6 +196,9 @@
 (test-gram "char (*a)()=&foo;"        '( (declaration ( (((IDENTIFIER . "a") * #f function non-pointer)
                                                                   :init (unary-& (IDENTIFIER . "foo"))) )
                                                         (w/o-storage-class-specifier (CHAR))) ))
+
+(test-section "syntax-check")
+(use gauche.process)
 
 (define (with-cpp file thunk)
   (with-input-from-process #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
