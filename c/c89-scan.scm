@@ -1,5 +1,43 @@
 ;;;
-;;; useful link : http://careferencemanual.com
+;;;    c89-scan for c89-gram.
+;;;
+;;;    Goal and limitation.
+;;;
+;;;      1) Reterns token with
+;;;
+;;;          1.0 Type of token (IDENTIFIER, STRING, etc)
+;;;          1.1 filename, line number, and possibly column (which points the beginning of token string)
+;;;          1.2 string from which token is made of.
+;;;
+;;;      2) Correctly tokenize all standard header files, with the help of cpp. (See test.scm and c/stdh.c)
+;;;
+;;;      3) Can be usable for both usual C program and preprocessed C program.
+;;;
+;;;          3.1 When used without cpp, cpp commands are treated as single token.
+;;;              For example a line
+;;;
+;;;                 #include <stdio.h>
+;;;
+;;;              Is a single token of type sharp-command.
+;;;
+;;;          3.3 When used with cpp, "# n file" line is recognized
+;;;              and tokens include filename, line number based on this information.
+;;;
+;;;      4) Whitespaces and comment is a token, not ignored.  So that
+;;;         application programs can reproduce original source code
+;;;         solely from tokens it receives.
+;;;
+;;;      5) Backslash-newline-escape is only recognized within strings
+;;;         and pre-processor lines.
+;;;         You can not break a line within a indentifier or an operator,
+;;;         (even within whitespaces.)
+;;;
+;;;      6) Trigraphs are not supported.
+;;;
+;;;
+;;;    Referece:
+;;;
+;;;       [CARM] http://careferencemanual.com
 ;;;
 (define-module lang.c.c89-scan (extend lang.core)
   (use gauche.parameter)
@@ -30,7 +68,7 @@
 (define base-line (make-parameter (cons 0 0)))
 
 (define (get-filename)
-  (if (filename) 
+  (if (filename)
     (filename)
     (port-name (current-input-port))))
 
@@ -43,7 +81,7 @@
   (let1 x (port-current-column (current-input-port))
     (or x 0)))
 
-(define (do-sharp str) 
+(define (do-sharp str)
   (let* ((x   (string-tokenize str))
          (len (length x)))
     (cond ((and (> len 2) (string=? (list-ref x 0) "#"))
@@ -72,7 +110,7 @@
             ((char=? #\} ch)  (make-token 'RCBRA      (list ch)))
             ((char=? #\[ ch)  (make-token 'LSBRA      (list ch)))
             ((char=? #\] ch)  (make-token 'RSBRA      (list ch)))
-            ((char=? #\# ch)  
+            ((char=? #\# ch)
              (let ((x (read-sharp (peek-char) (list ch))))
                (do-sharp (token-string x))
                x))
@@ -154,7 +192,7 @@
 
 (define (read-//-comment ch lis)
   (cond ((eof-object? ch) (make-token 'comment lis))
-        ((char=? #\nl ch) (read-char) (make-token 'comment (cons ch lis)))
+        ((char=? #\nl ch) (make-token 'comment lis)) ; CARM 2.2 comment does not include newline.
         (else (read-char) (read-//-comment (peek-char) (cons ch lis)))))
 
 (define (read-/*-comment ch lis)
@@ -189,7 +227,7 @@
     (for      .  FOR)
     (goto     .  GOTO)
     (if       .  IF)
-    (inline   .  INLINE)    ; c99 but needed to process standard header file
+    (inline   .  INLINE)      ; c99 but needed to process standard header file
     (int      .  INT)
     (long     .  LONG)
     (register .  REGISTER)
@@ -230,9 +268,9 @@
   (unless (is-typedefed? id)
     (push! typedefed id)))
 
-;;
-;; TODO: handle backslash-newline for non-cpp case.
-;;
+;;;
+;;;
+;;;
 (define (read-identifier ch lis)
 
   (define (return lis)
@@ -298,8 +336,6 @@
     (( #\~     )     .  ~           )
     ))
 
-;;
-;; TODO: handle backslash-newline for non-cpp case.
 ;;
 (define (read-operator ch lis)
 
