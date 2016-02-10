@@ -18,7 +18,6 @@
     (lambda (p)
       (with-input-from-port/column p thunk))))
 
-
 ;;;
 ;;;
 ;;;
@@ -201,7 +200,8 @@
 (use gauche.process)
 
 (define (with-cpp file thunk)
-  (with-input-from-process #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+  (with-input-from-process
+      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
     thunk))
 
 (define (syntax-check file)
@@ -234,7 +234,6 @@
               (test* f 0 (syntax-check f))))
           (if #f
             (take (test-c-files 1) 10)
-            (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c"))
-          )
+            (list "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c")))
 
 (test-end :exit-on-failure #t)
