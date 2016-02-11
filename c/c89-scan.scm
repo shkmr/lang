@@ -130,6 +130,8 @@
                      ((char-ci=? #\x x) (read-char) (read-hexadecimal (peek-char) (list x ch)))
                      ((char=?    #\. x) (read-char) (read-flonum (peek-char) (list x ch) #[0-9] 10 #[Ee]))
                      ((char-ci=? #\e x) (read-flonum (peek-char) (list ch) #[0-9] 10 #[Ee]))
+                     ((char-ci=? #\l x) (read-decimal (peek-char) (list ch)))
+                     ((char-ci=? #\u x) (read-decimal (peek-char) (list ch)))
                      ((char-set-contains? #[0-7] x) (read-octal (peek-char) (list ch)))
                      (else (make-token 'INTEGER-CONSTANT (list ch))))))
 

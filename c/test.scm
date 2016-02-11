@@ -40,6 +40,7 @@
 (test-scan "b---x;"    '((IDENTIFIER . "b") (DEC_OP . "--") (- . "-") (IDENTIFIER . "x") (SEMICOLON . ";")))
 
 (test-section "integer constants")
+(test-scan "0L;"      '((INTEGER-CONSTANT . "0L"    ) (SEMICOLON . ";")))
 (test-scan "1234;"    '((INTEGER-CONSTANT . "1234"  ) (SEMICOLON . ";")))
 (test-scan "012;"     '((INTEGER-CONSTANT . "012"   ) (SEMICOLON . ";")))
 (test-scan "0x12;"    '((INTEGER-CONSTANT . "0x12"  ) (SEMICOLON . ";")))
@@ -116,9 +117,29 @@
 (define (test-c-files n)
   (case n
     ((0) '("c/hello.c"))
-    ((1) (directory-list "gcc-torture/src/"
-                         :add-path? #t
-                         :filter (lambda (e) (string-suffix? ".c" e))))))
+    ((1)
+     (remove (lambda (x)
+               (member x '(
+                           "gcc-torture/src/20010604-1.c" /* _Bool */
+                           "gcc-torture/src/20010605-2.c" /* _Complex */
+                           "gcc-torture/src/20020227-1.c" /* __complex__ */
+                           "gcc-torture/src/20020404-1.c" /* __complex__ */
+                           "gcc-torture/src/20020411-1.c" /* __complex__ */
+                           "gcc-torture/src/20030408-1.c" /* Colon initializer */
+                           "gcc-torture/src/20030714-1.c" /* _Bool */
+                           "gcc-torture/src/20030910-1.c" /* __complex__ */
+                           "gcc-torture/src/20031010-1.c" /* _Bool */
+                           "gcc-torture/src/20041124-1.c" /* _Complex */
+                           "gcc-torture/src/20041201-1.c" /* _Complex */
+                           "gcc-torture/src/20050106-1.c" /* inline function ends with semicolon */
+                           "gcc-torture/src/20050121-1.c" /* _Complex */
+                           "gcc-torture/src/20050502-1.c" /* _Complex */
+                           )))
+
+             (directory-list "gcc-torture/src/"
+                             :add-path? #t
+                             :filter (lambda (e) (string-suffix? ".c" e)))))
+     ))
 
 (for-each (lambda (f)
             (test* f 0 (test-copy f)))
@@ -237,8 +258,8 @@
             (if (use-column-port)
               (test* f 0 (syntax-check/column with-cpp f))
               (test* f 0 (syntax-check with-cpp f))))
-          (if #f
-            (take (test-c-files 1) 10)
+          (if #t
+            (test-c-files 1)
             (list "c/CARM2.2.c" "c/tak.c" "c/type.c" "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" )))
 
 (for-each (lambda (f)

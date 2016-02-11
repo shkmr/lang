@@ -114,6 +114,13 @@
     (postfix_expr PTR_OP IDENTIFIER)                 : (list 'STRUCT-PTR-REF $1 $3)
     (postfix_expr INC_OP)                            : (list 'POST-INCREMENT $1)
     (postfix_expr DEC_OP)                            : (list 'POST-DECREMENT $1)
+    (compound_literal)                               : $1
+    (LPAREN compound_statement RPAREN)               : $2      ; ???
+    )
+
+   (compound_literal
+    (LPAREN type_name RPAREN LCBRA initializer_list RCBRA)        : (list 'COMPOUND-LITERAL $2 $5)
+    (LPAREN type_name RPAREN LCBRA initializer_list COMMA RCBRA)  : (list 'COMPOUND-LITERAL $2 $5)
     )
 
    (argument_expr_list
@@ -212,7 +219,6 @@
 
    (assignment_expr
     (conditional_expr)                                : $1
-    (LPAREN compound_statement RPAREN)                : $2      ; ???
     (unary_expr assignment_operator assignment_expr)  : (list $2 $1 $3)
     )
 
@@ -311,14 +317,14 @@
     (typedef_declarator_list COMMA typedef_declarator)    : (append $1 (list $3))
     )
 
-   (init_declarator_list
-    (init_declarator)                                    : (list $1)
-    (init_declarator_list COMMA init_declarator)         : (append $1 (list $3))
-    )
-
    (init_declarator
     (declarator)                                         : (list $1 :init #f)
     (declarator = initializer)                           : (list $1 :init $3)
+    )
+
+   (init_declarator_list
+    (init_declarator)                                    : (list $1)
+    (init_declarator_list COMMA init_declarator)         : (append $1 (list $3))
     )
 
    (storage_class_specifier
@@ -343,6 +349,7 @@
     (struct_or_union LCBRA RCBRA)                                    : (list $1 #f #f) ; XXX
     (struct_or_union LCBRA struct_declaration_list RCBRA)            : (list $1 #f $3)
     (struct_or_union IDENTIFIER)                                     : (list $1 $2 'w/o-struct-declaration-list)
+    (struct_or_union TYPE_NAME)                                      : (list $1 $2 'w/o-struct-declaration-list)
     )
 
    (struct_or_union
@@ -413,7 +420,7 @@
     (IDENTIFIER)                                            : (list $1)
     (TYPE_NAME)                                             : (list $1)
     (LPAREN typedef_declarator RPAREN)                      : $2
-    (typedef_declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
+    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list $3 'array))
     (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
     (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
     (typedef_declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
@@ -428,7 +435,7 @@
    (declarator2
     (IDENTIFIER)                                    : (list $1)
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA constant_expr RSBRA)         : (append $1 (list $3 'array))
+    (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list $3 'array))
     (declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
     (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
     (declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
@@ -482,9 +489,9 @@
    (abstract_declarator2
     (LPAREN abstract_declarator RPAREN)                      : $2
     (LSBRA RSBRA)                                            : (list 'array  #f #f)
-    (LSBRA constant_expr RSBRA)                              : (list 'array  #f $2)
+    (LSBRA expr RSBRA)                                       : (list 'array  #f $2)
     (abstract_declarator2 LSBRA RSBRA)                       : (list 'array  $1 #f)
-    (abstract_declarator2 LSBRA constant_expr RSBRA)         : (list 'array  $1 $3)
+    (abstract_declarator2 LSBRA expr RSBRA)                  : (list 'array  $1 $3)
     (LPAREN RPAREN)                                          : (list 'function #f #f)
     (LPAREN parameter_type_list RPAREN)                      : (list 'function #f $2)
     (abstract_declarator2 LPAREN RPAREN)                     : (list 'function $1 #f)
@@ -493,6 +500,7 @@
 
    (initializer
     (assignment_expr)                     : $1
+    (LCBRA RCBRA)                         : (list 'empty)
     (LCBRA initializer_list RCBRA)        : $2
     (LCBRA initializer_list COMMA RCBRA)  : $2
     )
@@ -500,12 +508,29 @@
    (initializer_list
     (initializer)                         : (list $1)
     (initializer_list COMMA initializer)  : (append $1 (list $3))
+    (designation initializer)                        : (list $1 $2)               ; c99
+    (initializer_list COMMA designation initializer) : (append $1 (list $3 $4))   ; c99
+    )
+
+   (designation
+    (designator_list =)
+    )
+
+   (designator
+    (LSBRA constant_expr RSBRA)
+    (DOT IDENTIFIER)
+    ;(DOT TYPE_NAME)
+    )
+
+   (designator_list
+    (designator)                     : (list $1)
+    (designator_list designator)     : (append $1 $2)
     )
 
    (statement
+    (expression_statement)                : $1
     (labeled_statement)                   : $1
     (compound_statement)                  : $1
-    (expression_statement)                : $1
     (selection_statement)                 : $1
     (iteration_statement)                 : $1
     (jump_statement)                      : $1
@@ -518,10 +543,19 @@
     )
 
    (compound_statement
-    (LCBRA RCBRA)                                 : (list 'BLOCK 'w/o-declaration-list '((NOP)))
-    (LCBRA statement_list RCBRA)                  : (list 'BLOCK 'w/o-declaration-list $2)
-    (LCBRA declaration_list RCBRA)                : (list 'BLOCK $2 'w/o-statement-list)
-    (LCBRA declaration_list statement_list RCBRA) : (list 'BLOCK $2 $3)
+    (LCBRA RCBRA)                                 : (list 'BLOCK #f)
+    (LCBRA declaration_or_statement_list RCBRA)   : (list 'BLOCK $2)
+    )
+
+   (declaration_or_statement_list
+    (declaration_or_statement)                                  : (list $1)
+    (declaration_or_statement declaration_or_statement_list)    : (cons $1 $2)
+    )
+
+   (declaration_or_statement
+    (declaration)                 : $1
+    (type_definition)             : $1
+    (statement)                   : $1
     )
 
    (declaration_list
