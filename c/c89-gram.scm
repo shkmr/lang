@@ -91,7 +91,13 @@
     )
 
    (type_definition
-    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) : (list 'define-type $3 $2)
+    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) :  (begin (define-type $3 $2)
+                                                                                 (list 'define-type $3 $2))
+    )
+
+   #;(identifier
+    (IDENTIFIER)  : $1
+    ;; (TYPE_NAME : $1
     )
 
    (primary_expr
@@ -224,7 +230,7 @@
     )
 
    (assignment_operator
-    (=)                    : '=
+    (=)                    : 'ASSIGN
     (MUL_ASSIGN)           : 'MUL_ASSIGN
     (DIV_ASSIGN)           : 'DIV_ASSIGN
     (MOD_ASSIGN)           : 'MOD_ASSIGN
@@ -276,21 +282,7 @@
     (storage_class_specifier type_qualifier)                     : (list $1 (list 'INT 'INT 'SIGNED) $2 #f)
     (storage_class_specifier type_qualifier type_specifier)      : (list $1 $3 $2 #f)
     (storage_class_specifier type_specifier type_qualifier)      : (list $1 $3 #f $2)
-    )
-
-   #;(declaration_specifiers
-    (storage_class_specifier)                            : (list $1 'w/o-declaration-specifiers )
-    (storage_class_specifier declaration_specifiers2)    : (list $1 $2)
-    (declaration_specifiers2)                            : (list 'w/o-storage-class-specifier $1)
-    )
-
-  #;(declaration_specifiers2
-    (type_specifier)                                     : (list $1)
-    (type_specifier declaration_specifiers2)             : (cons $1 $2)
-    (type_qualifier)                                     : (list $1)
-    (type_qualifier declaration_specifiers2)             : (cons $1 $2)
-    (function_specifier)                                 : (list $1)
-    (function_specifier declaration_specifiers2)         : (cons $1 $2)
+     (type_qualifier storage_class_specifier type_specifier)     : (list $2 $3 $1 #f)
     )
 
    (float_type_specifier
@@ -347,9 +339,11 @@
 
    (struct_or_union_specifier
     (struct_or_union IDENTIFIER LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)
-    (struct_or_union LCBRA RCBRA)                                    : (list $1 #f #f) ; XXX
+    (struct_or_union TYPE_NAME  LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)   ;; ???
+    (struct_or_union LCBRA RCBRA)                                    : (list $1 #f 'empty-struct-declaration-list)
     (struct_or_union LCBRA struct_declaration_list RCBRA)            : (list $1 #f $3)
     (struct_or_union IDENTIFIER)                                     : (list $1 $2 'w/o-struct-declaration-list)
+    (struct_or_union IDENTIFIER LCBRA RCBRA)                         : (list $1 $2 'empty-struct-declaration-list)
     (struct_or_union TYPE_NAME)                                      : (list $1 $2 'w/o-struct-declaration-list)
     )
 
@@ -390,6 +384,9 @@
     (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)       : (list 'ENUM $2 $4)
     (ENUM IDENTIFIER LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $2 $4)
     (ENUM IDENTIFIER)                                   : (list 'ENUM $2 #f)
+    (ENUM TYPE_NAME  LCBRA enumerator_list RCBRA)       : (list 'ENUM $2 $4)
+    (ENUM TYPE_NAME  LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $2 $4)
+    (ENUM TYPE_NAME)                                    : (list 'ENUM $2 #f)
     )
 
    (enumerator_list
@@ -400,6 +397,8 @@
    (enumerator
     (IDENTIFIER)                        : (list 'enumerator $1 'w/o-constant-expr)
     (IDENTIFIER = constant_expr)        : (list 'enumerator $1 $3)
+    ;;(TYPE_NAME)                       : (list 'enumerator $1 'w/o-constant-expr)
+    ;;(TYPE_NAME = constant_expr)       : (list 'enumerator $1 $3)
     )
 
    (type_qualifier
@@ -424,7 +423,7 @@
     (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list $3 'array))
     (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
     (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
-    (typedef_declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
+    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list $3 'function))
     (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list #f 'function))
     )
 
@@ -439,7 +438,7 @@
     (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list $3 'array))
     (declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
     (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
-    (declarator2 LPAREN identifier_list RPAREN)     : (append $1 (list $3 'function))
+    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list $3 'function))
     (declarator2 LPAREN RPAREN)                     : (append $1 (list #f 'function))
     )
 
@@ -471,9 +470,9 @@
     (declaration_specifiers)                     : (list #f $1)
     )
 
-   (identifier_list
+   (IDENTIFIER_list
     (IDENTIFIER)                              : (list $1)
-    (identifier_list COMMA IDENTIFIER)        : (append $1 (list $3))
+    (IDENTIFIER_list COMMA IDENTIFIER)        : (append $1 (list $3))
     )
 
    (type_name
@@ -520,7 +519,7 @@
    (designator
     (LSBRA constant_expr RSBRA)
     (DOT IDENTIFIER)
-    ;(DOT TYPE_NAME)
+    (DOT TYPE_NAME)
     )
 
    (designator_list
@@ -596,11 +595,11 @@
     )
 
    (constant
-    (INTEGER-CONSTANT)     : $1
-    (CHARACTER-CONSTANT)   : $1
-    (FLOAT-CONSTANT)       : $1
-    (DOUBLE-CONSTANT)      : $1
-    (LONG-DOUBLE-CONSTANT) : $1
+    (INTEGER-CONSTANT)     : (list 'CONSTANT $1)
+    (CHARACTER-CONSTANT)   : (list 'CONSTANT $1)
+    (FLOAT-CONSTANT)       : (list 'CONSTANT $1)
+    (DOUBLE-CONSTANT)      : (list 'CONSTANT $1)
+    (LONG-DOUBLE-CONSTANT) : (list 'CONSTANT $1)
     )
 
    ))
@@ -626,11 +625,6 @@
 
 ;;
 (define (compile e)
-  (cond ((null? e) '())
-        (else
-         (case (car e)
-           ((define-type) (do-define-type (cadr e) (caddr e)))
-           (else '()))))
   (newline)
   (pppp e)
   e)
@@ -650,7 +644,7 @@
       (print "typedef: redefinition with different definition: " id)))
 
   (define (register id t)
-    (print "do-define-type: adding: " id " as: " t)
+    (print "define-type: adding: " id " as: " t)
     (hash-table-put! type-table id t)
     (register-typedef-for-c89-scan id))
 
@@ -659,8 +653,8 @@
     (if x (check t x))
     (register id t)))
 
-(define (do-define-type typedef-declarator-list declaration-specifiers)
-  (print "\ndo-define-type: " typedef-declarator-list)
+(define (define-type typedef-declarator-list declaration-specifiers)
+  (print "\ndefine-type: " typedef-declarator-list)
   (for-each (lambda (type-decl)
               (let ((name (car type-decl)))
                 (register-type (string->symbol (token-string name))

@@ -114,40 +114,44 @@
 (use file.util)
 (use srfi-13)
 
-(define (test-c-files n)
-  (case n
-    ((0) '("c/hello.c"))
-    ((1)
-     (remove (lambda (x)
-               (member x '(
-                           "gcc-torture/src/20010604-1.c" /* _Bool */
-                           "gcc-torture/src/20010605-2.c" /* _Complex */
-                           "gcc-torture/src/20020227-1.c" /* __complex__ */
-                           "gcc-torture/src/20020404-1.c" /* __complex__ */
-                           "gcc-torture/src/20020411-1.c" /* __complex__ */
-                           "gcc-torture/src/20030408-1.c" /* Colon initializer */
-                           "gcc-torture/src/20030714-1.c" /* _Bool */
-                           "gcc-torture/src/20030910-1.c" /* __complex__ */
-                           "gcc-torture/src/20031010-1.c" /* _Bool */
-                           "gcc-torture/src/20041124-1.c" /* _Complex */
-                           "gcc-torture/src/20041201-1.c" /* _Complex */
-                           "gcc-torture/src/20050121-1.c" /* _Complex */
-                           "gcc-torture/src/20050502-1.c" /* _Complex */
-                           "gcc-torture/src/930406-1.c"   /* __label__ */
-                           "gcc-torture/src/960512-1.c"   /* __complex__ */
-                           "gcc-torture/src/980605-1.c"   /* __inline__  */
-                           "gcc-torture/src/991014-1.c"   /* typeof  */
-                           "gcc-torture/src/991228-1.c"   /* __extension__  */
-                           )))
-
-             (directory-list "gcc-torture/src/"
-                             :add-path? #t
-                             :filter (lambda (e) (string-suffix? ".c" e)))))
-     ))
+(define (test-c-files)
+  (remove (lambda (x)
+            (member x '(
+                        "gcc-torture/src/20010604-1.c" ;      _Bool
+                        "gcc-torture/src/20010605-2.c" ;      _Complex
+                        "gcc-torture/src/20020227-1.c" ;     __complex__
+                        "gcc-torture/src/20020404-1.c" ;     __complex__
+                        "gcc-torture/src/20020411-1.c" ;     __complex__
+                        "gcc-torture/src/20030408-1.c" ;       Colon initializer
+                        "gcc-torture/src/20030714-1.c" ;      _Bool
+                        "gcc-torture/src/20030910-1.c" ;     __complex__
+                        "gcc-torture/src/20031010-1.c" ;      _Bool
+                        "gcc-torture/src/20041124-1.c" ;      _Complex
+                        "gcc-torture/src/20041201-1.c" ;      _Complex
+                        "gcc-torture/src/20050121-1.c" ;      _Complex
+                        "gcc-torture/src/20050502-1.c" ;      _Complex
+                        "gcc-torture/src/930406-1.c"   ;     __label__
+                        "gcc-torture/src/960512-1.c" ;     __complex__
+                        "gcc-torture/src/980605-1.c" ;     __inline__
+                        "gcc-torture/src/991014-1.c" ;       typeof
+                        "gcc-torture/src/991228-1.c" ;     __extension__
+                        "gcc-torture/src/anon-1.c" ;       nested anonymous entity
+                        "gcc-torture/src/builtin-types-compatible-p.c" ;
+                        "gcc-torture/src/ffs-1.c"   ;     __volatile
+                        "gcc-torture/src/loop-2c.c" ;     __inline__
+                        "gcc-torture/src/compndlit-1.c" ;     Colon initializer
+                        "gcc-torture/src/restrict-1.c" ;     __restrict__
+                        "gcc-torture/src/stdarg-1.c" ;     __builtin_va_arg
+                        "gcc-torture/src/stdarg-2.c" ;     __builtin_va_arg
+                        "gcc-torture/src/struct-ini-4.c" ;    Conlon initializer
+                        )))
+          (directory-list "gcc-torture/src/"
+                          :add-path? #t
+                          :filter (lambda (e) (string-suffix? ".c" e)))))
 
 (for-each (lambda (f)
             (test* f 0 (test-copy f)))
-          (test-c-files 0))
+          '("c/CARM2.2.c" "c/foo.c" "c/hello.c" "c/type.c" "c/str.c"))
 
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
@@ -207,7 +211,7 @@
                                                         (EXTERN (CHAR) #f #f)) ))
 (test-gram "extern char *(*a)[];"       '( (declaration ( (((IDENTIFIER . "a") * #f array *)              :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "static char a[10];"         '( (declaration ( (((IDENTIFIER . "a") (INTEGER-CONSTANT . "10") array non-pointer)
+(test-gram "static char a[10];"         '( (declaration ( (((IDENTIFIER . "a") (CONSTANT (INTEGER-CONSTANT . "10")) array non-pointer)
                                                            :init #f) )
                                                         (STATIC (CHAR) #f #f)) ))
 (test-gram "extern char a();"           '( (declaration ( (((IDENTIFIER . "a") #f function non-pointer)   :init #f) )
@@ -262,16 +266,14 @@
             (if (use-column-port)
               (test* f 0 (syntax-check/column with-cpp f))
               (test* f 0 (syntax-check with-cpp f))))
-          (if #t
-            (test-c-files 1)
-            (list "c/CARM2.2.c" "c/tak.c" "c/type.c" "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" )))
+          (if #f
+            (test-c-files)
+            '("c/CARM2.2.c" "c/tak.c" "c/type.c" "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" )))
 
 (for-each (lambda (f)
             (if (use-column-port)
               (test* f 0 (syntax-check/column without-cpp f))
               (test* f 0 (syntax-check with-cpp f))))
-          (if #f
-            (take (test-c-files 1) 10)
-            (list "c/CARM2.2.c" "c/foo.c" "c/type.c" "c/str.c")))
+          '("c/CARM2.2.c" "c/foo.c" "c/type.c" "c/str.c" "c/hello.c"))
 
 (test-end :exit-on-failure #t)
