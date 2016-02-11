@@ -84,15 +84,15 @@
     )
 
    (function_definition
-    (declaration_specifiers declarator declaration_list compound_statement) : (list 'define-function $2 $1 $3 $4)
-    (declaration_specifiers declarator compound_statement) : (list 'define-function $2 $1 'w/o-declaration-list $3)
-    (declarator declaration_list compound_statement) : (list 'define-function $1 'w/o-declaration-specifiers $2 $3)
-    (declarator compound_statement) : (list 'define-function $1 'w/o-declaration-list 'w/o-declaration-specifiers $2)
+    (declaration_specifiers declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION $2 $1 $3 $4)
+    (declaration_specifiers declarator compound_statement) : (list 'DEFINE-FUNCTION $2 $1 'w/o-declaration-list $3)
+    (declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION $1 'w/o-declaration-specifiers $2 $3)
+    (declarator compound_statement) : (list 'DEFINE-FUNCTION $1 'w/o-declaration-list 'w/o-declaration-specifiers $2)
     )
 
    (type_definition
     (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) :  (begin (define-type $3 $2)
-                                                                                 (list 'define-type $3 $2))
+                                                                                 (list 'DEFINE-TYPE $3 $2))
     )
 
    #;(identifier
@@ -108,7 +108,7 @@
     )
 
    (string_list
-    (STRING)                       : (list 'string-list $1)
+    (STRING)                       : (list 'STRING-LIST $1)
     (string_list STRING)           : (append $1 (list $2))
     )
 
@@ -131,8 +131,9 @@
     )
 
    (argument_expr_list
-    (assignment_expr)                                : (list $1)
-    (argument_expr_list COMMA assignment_expr)       : (append $1 (list $3))
+    (assignment_expr)                              : (list $1)
+    (argument_expr_list COMMA assignment_expr)     : (append $1 (list $3))
+    ;;(assignment_expr COMMA argument_expr_list)   : (cons $1 (list $3))
     )
 
    (unary_expr
@@ -253,9 +254,9 @@
     )
 
    (declaration
-    (declaration_specifiers SEMICOLON)                                 : (list 'declaration 'w/o-init-declarator-list $1)
-    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'declaration $2 $1)
-    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'declaration $2 $1) ; ignore asm label
+    (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION 'w/o-init-declarator-list $1)
+    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION $2 $1)
+    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION $2 $1) ; ignore asm label
     )
 
    (asm_label
@@ -301,13 +302,13 @@
     )
 
    (int_type_specifier
-    (int_type_name)                            : (list $1)
-    (int_type_name int_type_specifier)         : (cons $1 $2)
+    (int_type_name)                           : (list $1)
+    (int_type_name int_type_specifier)        : (cons $1 $2)
     )
 
    (typedef_declarator_list
-    (typedef_declarator)                                  : (list $1)
-    (typedef_declarator_list COMMA typedef_declarator)    : (append $1 (list $3))
+    (typedef_declarator)                                 : (list $1)
+    (typedef_declarator_list COMMA typedef_declarator)   : (append $1 (list $3))
     )
 
    (init_declarator
@@ -613,13 +614,13 @@
                   (if (pair? x)
                       (begin
                         (dsp "(")
-                        (ff x (+ n 2))
+                        (ff x (+ n 4))
                         (dsp ")"))
                       (wri x)))
                 v)))
   (newline)
   (display "(")(newline)
-  (ff v 2)
+  (ff v 4)
   (display ")")(newline)
   )
 
