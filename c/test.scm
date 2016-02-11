@@ -204,20 +204,24 @@
       #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
     thunk))
 
-(define (syntax-check file)
-  (reset-typedef-for-c89-scan)
-  (with-cpp file
+(define (without-cpp file thunk)
+  (with-input-from-file file thunk))
+
+(define (syntax-check with file)
+  (initialize-c89-scan)
+  (with file
     (lambda ()
       (with-input-from-port/mirroring-to-port
           (current-input-port)
           (current-output-port)
         (lambda ()
+          (slot-set! (current-input-port) 'name file)
           (c89-gram cscan error)
           0)))))
 
-(define (syntax-check/column file)
-  (reset-typedef-for-c89-scan)
-  (with-cpp file
+(define (syntax-check/column with file)
+  (initialize-c89-scan)
+  (with file
     (lambda ()
       (with-input-from-port/mirroring-to-port
           (current-input-port)
@@ -225,15 +229,24 @@
         (lambda ()
           (with-input-from-port/column (current-input-port)
             (lambda ()
+              (slot-set! (current-input-port) 'name file)
               (c89-gram cscan error)
               0)))))))
 
 (for-each (lambda (f)
             (if (use-column-port)
-              (test* f 0 (syntax-check/column f))
-              (test* f 0 (syntax-check f))))
+              (test* f 0 (syntax-check/column with-cpp f))
+              (test* f 0 (syntax-check with-cpp f))))
           (if #f
             (take (test-c-files 1) 10)
-            (list "c/type.c" "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" "c/tak.c")))
+            (list "c/CARM2.2.c" "c/tak.c" "c/type.c" "c/stdh.c" "c/str.c" "c/foo.c" "c/hello.c" )))
+
+(for-each (lambda (f)
+            (if (use-column-port)
+              (test* f 0 (syntax-check/column without-cpp f))
+              (test* f 0 (syntax-check with-cpp f))))
+          (if #f
+            (take (test-c-files 1) 10)
+            (list "c/CARM2.2.c" "c/foo.c" "c/type.c" "c/str.c")))
 
 (test-end :exit-on-failure #t)

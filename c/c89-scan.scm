@@ -20,6 +20,9 @@
 ;;;
 ;;;              Is a single token of type sharp-command.
 ;;;
+;;;              We first need to process the C file with cpp to get necessary typedef.
+;;;              And then process the same file without cpp.
+;;;
 ;;;          3.3 When used with cpp, "# n file" line is recognized
 ;;;              and tokens include filename, line number based on this information.
 ;;;
@@ -44,7 +47,7 @@
   (use srfi-13)
   (export c89-scan
           register-typedef-for-c89-scan
-          reset-typedef-for-c89-scan
+          initialize-c89-scan
           token
           token-type
           token-string
@@ -261,7 +264,9 @@
 (define (is-typedefed? id)
   (memq id typedefed))
 
-(define (reset-typedef-for-c89-scan)
+(define (initialize-c89-scan)
+  (filename #f)
+  (base-line (cons 0 0))
   (set! typedefed '()))
 
 (define (register-typedef-for-c89-scan id)
