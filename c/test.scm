@@ -131,9 +131,13 @@
                            "gcc-torture/src/20031010-1.c" /* _Bool */
                            "gcc-torture/src/20041124-1.c" /* _Complex */
                            "gcc-torture/src/20041201-1.c" /* _Complex */
-                           "gcc-torture/src/20050106-1.c" /* inline function ends with semicolon */
                            "gcc-torture/src/20050121-1.c" /* _Complex */
                            "gcc-torture/src/20050502-1.c" /* _Complex */
+                           "gcc-torture/src/930406-1.c"   /* __label__ */
+                           "gcc-torture/src/960512-1.c"   /* __complex__ */
+                           "gcc-torture/src/980605-1.c"   /* __inline__  */
+                           "gcc-torture/src/991014-1.c"   /* typeof  */
+                           "gcc-torture/src/991228-1.c"   /* __extension__  */
                            )))
 
              (directory-list "gcc-torture/src/"

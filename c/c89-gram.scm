@@ -77,9 +77,10 @@
     )
 
    (external_declaration
-    (function_definition)     : (compile $1)
-    (type_definition)         : (compile $1)
-    (declaration)             : (compile $1)
+    (function_definition)            : (compile $1)
+    (function_definition SEMICOLON)  : (compile $1)
+    (type_definition)                : (compile $1)
+    (declaration)                    : (compile $1)
     )
 
    (function_definition
