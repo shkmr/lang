@@ -251,18 +251,59 @@
     )
 
    (declaration_specifiers
+    (type_specifier)                                     : (list 'w/o-storage-class-specifier $1 #f #f)
+    (function_specifier)                                 : (list 'w/o-storage-class-specifier $1 #f #f)
+    (type_qualifier)                                     : (list 'w/o-storage-class-specifier (list 'INT 'INT 'SIGNED) $1 #f)
+
+    (type_qualifier type_specifier)                      : (list 'w/o-storage-class-specifier $2 $1 #f)
+    (type_specifier type_qualifier)                      : (list 'w/o-storage-class-specifier $2 #f $1)
+    (function_specifier type_specifier)                  : (list 'w/o-storage-class-specifier $2 $1 #f)
+    (type_specifier function_specifier)                  : (list 'w/o-storage-class-specifier $1 $2 #f)
+
+    (storage_class_specifier)                                    : (list $1 (list 'INT 'INT 'SIGNED) #f #f)
+    (storage_class_specifier type_specifier)                     : (list $1 $2 #f #f)
+    (storage_class_specifier function_specifier)                 : (list $1 (list 'INT 'INT 'SIGNED) $2 #f)
+    (storage_class_specifier function_specifier type_specifier)  : (list $1 $3 $2 #f)
+    (storage_class_specifier type_specifier function_specifier)  : (list $1 $2 $3 #f)
+
+    (storage_class_specifier type_qualifier)                     : (list $1 (list 'INT 'INT 'SIGNED) $2 #f)
+    (storage_class_specifier type_qualifier type_specifier)      : (list $1 $3 $2 #f)
+    (storage_class_specifier type_specifier type_qualifier)      : (list $1 $3 #f $2)
+    )
+
+   #;(declaration_specifiers
     (storage_class_specifier)                            : (list $1 'w/o-declaration-specifiers )
     (storage_class_specifier declaration_specifiers2)    : (list $1 $2)
     (declaration_specifiers2)                            : (list 'w/o-storage-class-specifier $1)
     )
 
-   (declaration_specifiers2
+  #;(declaration_specifiers2
     (type_specifier)                                     : (list $1)
     (type_specifier declaration_specifiers2)             : (cons $1 $2)
     (type_qualifier)                                     : (list $1)
     (type_qualifier declaration_specifiers2)             : (cons $1 $2)
     (function_specifier)                                 : (list $1)
     (function_specifier declaration_specifiers2)         : (cons $1 $2)
+    )
+
+   (float_type_specifier
+    (FLOAT)                                   : (list 'FLOAT 'SINGLE)
+    (DOUBLE)                                  : (list 'FLOAT 'DOUBLE)
+    (LONG DOUBLE)                             : (list 'FLOAT 'LONG)
+    )
+
+   (int_type_name
+    (CHAR)                                    : 'CHAR
+    (INT)                                     : 'INT
+    (SHORT)                                   : 'SHORT
+    (LONG)                                    : 'LONG
+    (SIGNED)                                  : 'SIGNED
+    (UNSIGNED)                                : 'UNSIGNED
+    )
+
+   (int_type_specifier
+    (int_type_name)                            : (list $1)
+    (int_type_name int_type_specifier)         : (cons $1 $2)
     )
 
    (typedef_declarator_list
@@ -288,19 +329,13 @@
     )
 
    (type_specifier
-    (VOID)                         :  'VOID
-    (CHAR)                         :  'CHAR
-    (SHORT)                        :  'SHORT
-    (INT)                          :  'INT
-    (LONG)                         :  'LONG
-    (FLOAT)                        :  'FLOAT
-    (DOUBLE)                       :  'DOUBLE
-    (SIGNED)                       :  'SIGNED
-    (UNSIGNED)                     :  'UNSIGNED
+    (VOID)                         :  (list 'VOID)
+    (int_type_specifier)           :  $1
+    (float_type_specifier)         :  $1
     (struct_or_union_specifier)    :  $1
     (enum_specifier)               :  $1
     (TYPE_NAME)                    :  $1
-    (VA_LIST)                      :  'VA_LIST
+    (VA_LIST)                      :  (list 'VA_LIST)
     )
 
    (struct_or_union_specifier
