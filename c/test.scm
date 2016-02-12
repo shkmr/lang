@@ -130,10 +130,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(with-module lang.core (select-lalr-version 'v2.5.0))
+(with-module lang.core (select-lalr-version 'v2.1.0))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
+
+(define make-lalr-token
+  (case (with-module lang.core (select-lalr-version))
+    ((2.4.1 v2.4.1 2.5.0 v2.5.0)
+     (lambda (type token)
+       (let ((make-lexical-token   (with-module lang.lalr.lalr make-lexical-token))
+             (make-source-location (with-module lang.lalr.lalr make-source-location)))
+         (let ((loc (make-source-location (token-file token)
+                                          (token-line token)
+                                          (token-column token)
+                                          -1 -1)))
+           (make-lexical-token type loc token)))))
+    ((2.1.0 v2.1.0) 
+     (lambda  (type token)
+       (cons type token)))))
 
 (use file.util)
 (use srfi-13)
@@ -213,7 +228,7 @@
       (case (token-type x)
         ((sharp-command comment whitespaces) (cscan))
         (else
-         (cons (token-type x) x))))))
+         (make-lalr-token (token-type x) x))))))
 
 ;;
 (define (test-parse str expect)

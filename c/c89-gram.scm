@@ -74,7 +74,7 @@
     (file)                       : $1
     )
 
-    (file
+   (file
     (external_declaration)       : (list $1)
     (file external_declaration)  : (append $1 $2)
     )

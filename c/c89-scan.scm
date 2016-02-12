@@ -53,6 +53,7 @@
           token-string
           token-file
           token-line
+          token-column
           <scan-error>
           ))
 (select-module lang.c.c89-scan)
