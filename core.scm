@@ -8,6 +8,8 @@
 
 (define-condition-type <scan-error> <error> #f (lis))
 
+(define select-lalr-version (make-parameter 'v2.1.0))
+
 ;;
 ;; if use use ggc.port.colum,
 ;; port-current-colum <column-port> willbe available.

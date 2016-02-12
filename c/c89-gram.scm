@@ -8,7 +8,7 @@
 ;;;
 (define-module lang.c.c89-gram (extend lang.core)
   (use gauche.parameter)
-  (use lalr)
+  (use lang.lalr.lalr)    ;; This should eventually become lang.lalr .
   (use lang.c.c89-scan)
   (export make-c89-parse))
 (select-module lang.c.c89-gram)
