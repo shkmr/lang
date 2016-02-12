@@ -7,7 +7,7 @@
 (test-module 'lang.c.c89-scan)
 
 ;;;
-;;; This use-column-port is set to #t, use mirroring port as well.
+;;; If use-column-port is set to #t, use mirroring port as well.
 ;;;
 (define use-column-port (make-parameter #t))
 
