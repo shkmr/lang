@@ -18,10 +18,11 @@
   (error <scan-error> :lis lis msg (lis->string lis) x))
 
 (define-record-type token
-  (%make-token type string file line column)
+  (%make-token type string value file line column)
   token?
   (type   token-type)
   (string token-string)
+  (value  token-value)
   (file   token-file)
   (line   token-line)
   (column token-column)
@@ -35,9 +36,10 @@
 (define line   (make-parameter #f))
 (define column (make-parameter #f))
 
-(define (make-token type lis)
+(define (make-token type lis :optional (value #f))
   (%make-token type
                (lis->string lis)
+               value
                (file)
                (line)
                (column)))
