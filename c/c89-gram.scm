@@ -14,29 +14,31 @@
 (select-module lang.c.c89-gram)
 
 (define (make-c89-parse :optional (compile compile) (define-type define-type))
-  ;;
-  ;;  Based on usenet/net.sources/ansi.c.grammar.Z
-  ;;
-  ;;    From: tps@sdchem.UUCP (Tom Stockfisch)
-  ;;    Newsgroups: net.sources
-  ;;    Subject: ANSI C draft yacc grammar
-  ;;    Message-ID: <645@sdchema.sdchem.UUCP>
-  ;;    Date: 3 Mar 87 21:31:17 GMT
-  ;;    References: <403@ubc-vision.UUCP>
-  ;;    Sender: news@sdchem.UUCP
-  ;;    Reply-To: tps@sdchemf.UUCP (Tom Stockfisch)
-  ;;    Organization: UC San Diego
-  ;;    Lines: 775
-  ;;
-  ;;  Updates can be found at:
-  ;;
-  ;;    http://www.quut.com/c/ANSI-C-grammar-y-2011.html
-  ;;    http://www.quut.com/c/ANSI-C-grammar-y-1999.html
-  ;;
   (lalr-parser
    (expect: 2)  ; ELSE, DOUBLE
    ;;(output: c89-gram "c89-gram.yy.scm")
    ;;(out-table: "c89-gram.out")
+   ;;
+   ;;  C89 grammar with some extensions towards C99.
+   ;;
+   ;;  Based on usenet/net.sources/ansi.c.grammar.Z
+   ;;
+   ;;    From: tps@sdchem.UUCP (Tom Stockfisch)
+   ;;    Newsgroups: net.sources
+   ;;    Subject: ANSI C draft yacc grammar
+   ;;    Message-ID: <645@sdchema.sdchem.UUCP>
+   ;;    Date: 3 Mar 87 21:31:17 GMT
+   ;;    References: <403@ubc-vision.UUCP>
+   ;;    Sender: news@sdchem.UUCP
+   ;;    Reply-To: tps@sdchemf.UUCP (Tom Stockfisch)
+   ;;    Organnization: UC San Diego
+   ;;    Lines: 775
+   ;;
+   ;;  Updates can be found at:
+   ;;
+   ;;    http://www.quut.com/c/ANSI-C-grammar-y-2011.html
+   ;;    http://www.quut.com/c/ANSI-C-grammar-y-1999.html
+   ;;
    (ID
     SEMICOLON COMMA
     ;; LCBRA={  RCBRA=} LSBRA=[  RSBRA=]
