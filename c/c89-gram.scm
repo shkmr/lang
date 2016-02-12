@@ -33,7 +33,7 @@
   ;;    http://www.quut.com/c/ANSI-C-grammar-y-1999.html
   ;;
   (lalr-parser
-   (expect: 1)  ; IF-ELSE
+   (expect: 2)  ; ELSE, DOUBLE
    ;;(output: c89-gram "c89-gram.yy.scm")
    ;;(out-table: "c89-gram.out")
    (ID

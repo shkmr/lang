@@ -41,6 +41,9 @@
 
 (test-section "integer constants")
 (test-scan "0L;"      '((INTEGER-CONSTANT . "0L"    ) (SEMICOLON . ";")))
+(test-scan "0l;"      '((INTEGER-CONSTANT . "0l"    ) (SEMICOLON . ";")))
+(test-scan "0U;"      '((INTEGER-CONSTANT . "0U"    ) (SEMICOLON . ";")))
+(test-scan "0u;"      '((INTEGER-CONSTANT . "0u"    ) (SEMICOLON . ";")))
 (test-scan "1234;"    '((INTEGER-CONSTANT . "1234"  ) (SEMICOLON . ";")))
 (test-scan "012;"     '((INTEGER-CONSTANT . "012"   ) (SEMICOLON . ";")))
 (test-scan "0x12;"    '((INTEGER-CONSTANT . "0x12"  ) (SEMICOLON . ";")))
