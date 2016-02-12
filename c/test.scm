@@ -156,11 +156,44 @@
             (test* f 0 (test-copy f)))
           '("c/CARM2.2.c" "c/foo.c" "c/hello.c" "c/type.c" "c/str.c"))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
 
-(test-section "test gram")
+
+;;
+(test-section "test parse")
+
+(define (compile e)
+  (define (pp v)
+    (define (ff v n)
+      (let ((sp (make-string n #\space)))
+        (define (wri x) (display sp) (write x) (newline))
+        (define (dsp x) (display sp) (display x) (newline))
+        (for-each (lambda (x)
+                    (if (pair? x)
+                      (begin
+                        (dsp "(")
+                        (ff x (+ n 4))
+                        (dsp ")"))
+                      (wri x)))
+                  v)))
+    (newline)
+    (display "(")(newline)
+    (ff v 4)
+    (display ")")(newline)
+    )
+  (newline)
+  (pp e)
+  e)
+
+;;(define c89-parse (make-c89-parse))
+(define c89-parse (make-c89-parse compile))
+(with-module lang.c.c89-gram (debug #t))
 
 (define (cscan)
   (let ((x (c89-scan)))
@@ -172,7 +205,7 @@
          (cons (token-type x) x))))))
 
 ;;
-(define (test-gram str expect)
+(define (test-parse str expect)
   (define (conv lis)
     (map (lambda (x)
            (cond ((is-a? x token) (cons (token-type x) (token-string x)))
@@ -184,47 +217,47 @@
                        with-input-from-string)
                      str
                      (lambda ()
-                       (conv (c89-gram cscan error))))))
+                       (conv (c89-parse cscan error))))))
 
 ;;
-(test-gram "char a;"                    '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f) )
+(test-parse "char a;"                    '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f) )
                                                         (w/o-storage-class-specifier (CHAR) #f #f)) ))
-(test-gram "char *a;"                   '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
+(test-parse "char *a;"                   '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
                                                         (w/o-storage-class-specifier (CHAR) #f #f)) ))
-(test-gram "static char *a;"            '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
+(test-parse "static char *a;"            '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
                                                         (STATIC (CHAR) #f #f)) ))
-(test-gram "extern char a, b;"          '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
+(test-parse "extern char a, b;"          '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
                                                           (((IDENTIFIER . "b") non-pointer) :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char a, *b;"         '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
+(test-parse "extern char a, *b;"         '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
                                                           (((IDENTIFIER . "b") *)           :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char a, **b;"        '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
+(test-parse "extern char a, **b;"        '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
                                                           (((IDENTIFIER . "b") * *)         :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char a, ***b;"       '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
+(test-parse "extern char a, ***b;"       '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
                                                           (((IDENTIFIER . "b") * * *)       :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
 
-(test-gram "extern char a[];"           '( (DECLARATION ( (((IDENTIFIER . "a") #f array non-pointer)      :init #f) )
+(test-parse "extern char a[];"           '( (DECLARATION ( (((IDENTIFIER . "a") #f array non-pointer)      :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char *a[];"          '( (DECLARATION ( (((IDENTIFIER . "a") #f array *)                :init #f) )
+(test-parse "extern char *a[];"          '( (DECLARATION ( (((IDENTIFIER . "a") #f array *)                :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char (*a)[];"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f array non-pointer)    :init #f) )
+(test-parse "extern char (*a)[];"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f array non-pointer)    :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char *(*a)[];"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f array *)              :init #f) )
+(test-parse "extern char *(*a)[];"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f array *)              :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "static char a[10];"         '( (DECLARATION ( (((IDENTIFIER . "a") (CONSTANT (INTEGER-CONSTANT . "10")) array non-pointer)
+(test-parse "static char a[10];"         '( (DECLARATION ( (((IDENTIFIER . "a") (CONSTANT (INTEGER-CONSTANT . "10")) array non-pointer)
                                                            :init #f) )
                                                         (STATIC (CHAR) #f #f)) ))
-(test-gram "extern char a();"           '( (DECLARATION ( (((IDENTIFIER . "a") #f function non-pointer)   :init #f) )
+(test-parse "extern char a();"           '( (DECLARATION ( (((IDENTIFIER . "a") #f function non-pointer)   :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char (*a)();"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer) :init #f) )
+(test-parse "extern char (*a)();"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer) :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
-(test-gram "extern char *(*a)();"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f function *) :init #f) )
+(test-parse "extern char *(*a)();"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f function *) :init #f) )
                                                                  (EXTERN (CHAR) #f #f)) ))
 
-(test-gram "char (*a)()=&foo;"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer)
+(test-parse "char (*a)()=&foo;"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer)
                                                                   :init (unary-& (IDENTIFIER . "foo"))) )
                                                         (w/o-storage-class-specifier (CHAR) #f #f)) ))
 
@@ -239,8 +272,10 @@
 (define (without-cpp file thunk)
   (with-input-from-file file thunk))
 
+;;
 (define (syntax-check with file)
   (initialize-c89-scan)
+  (with-module lang.c.c89-gram (set! type-table (make-hash-table 'eq?)))
   (with file
     (lambda ()
       (with-input-from-port/mirroring-to-port
@@ -248,11 +283,12 @@
           (current-output-port)
         (lambda ()
           (slot-set! (current-input-port) 'name file)
-          (c89-gram cscan error)
+          (c89-parse cscan error)
           0)))))
 
 (define (syntax-check/column with file)
   (initialize-c89-scan)
+  (with-module lang.c.c89-gram (set! type-table (make-hash-table 'eq?)))
   (with file
     (lambda ()
       (with-input-from-port/mirroring-to-port
@@ -262,7 +298,7 @@
           (with-input-from-port/column (current-input-port)
             (lambda ()
               (slot-set! (current-input-port) 'name file)
-              (c89-gram cscan error)
+              (c89-parse cscan error)
               0)))))))
 
 (for-each (lambda (f)

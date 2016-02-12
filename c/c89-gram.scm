@@ -7,12 +7,13 @@
 ;;;
 ;;;
 (define-module lang.c.c89-gram (extend lang.core)
+  (use gauche.parameter)
   (use lalr)
   (use lang.c.c89-scan)
-  (export c89-gram))
+  (export make-c89-parse))
 (select-module lang.c.c89-gram)
 
-(define c89-gram
+(define (make-c89-parse :optional (compile compile) (define-type define-type))
   ;;
   ;;  Based on usenet/net.sources/ansi.c.grammar.Z
   ;;
@@ -605,33 +606,12 @@
 
    ))
 
-(define (pppp v)
-  (define (ff v n)
-    (let ((sp (make-string n #\space)))
-      (define (wri x) (display sp) (write x) (newline))
-      (define (dsp x) (display sp) (display x) (newline))
-      (for-each (lambda (x)
-                  (if (pair? x)
-                      (begin
-                        (dsp "(")
-                        (ff x (+ n 4))
-                        (dsp ")"))
-                      (wri x)))
-                v)))
-  (newline)
-  (display "(")(newline)
-  (ff v 4)
-  (display ")")(newline)
-  )
 
 ;;
-(define (compile e)
-  (newline)
-  (pppp e)
-  e)
+(define (compile e) e)
 
-;;
 (define type-table (make-hash-table 'eq?))
+(define debug      (make-parameter #f))
 
 (define (register-type id pointer declaration-specifiers)
 
@@ -640,12 +620,15 @@
     ;;  TODO: We likely need to resolve all the typef'ed
     ;;  types before comparing.  We just use equal? for now.
     ;;
-    (if (equal? t x)
-      (print "typedef: redefinition with the same definition: " id)
-      (print "typedef: redefinition with different definition: " id)))
+    (if (debug)
+      (if (equal? t x)
+        (print "typedef: redefinition with the same definition: "  id)
+        (print "typedef: redefinition with different definition: " id
+               "\n  Previous: " t
+               "\n This Time: "  x))))
 
   (define (register id t)
-    (print "define-type: adding: " id " as: " t)
+    (if (debug) (print "define-type: adding: " id " as: " t))
     (hash-table-put! type-table id t)
     (register-typedef-for-c89-scan id))
 
@@ -655,7 +638,6 @@
     (register id t)))
 
 (define (define-type typedef-declarator-list declaration-specifiers)
-  (print "\ndefine-type: " typedef-declarator-list)
   (for-each (lambda (type-decl)
               (let ((name (car type-decl)))
                 (register-type (string->symbol (token-string name))
