@@ -258,7 +258,7 @@
 
  (define pprint (lambda (obj) (write obj) (newline)))
  (define lalr-keyword? symbol?)
- (def-macro (BITS-PER-WORD) 30)
+ (def-macro (BITS-PER-WORD) 30) ; sizeof(long)-3 = 61?
  (def-macro (logical-or x . y) `(logior ,x . ,y))
  (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj))
  )
