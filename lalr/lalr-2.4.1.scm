@@ -20,7 +20,7 @@
 (define *lalr-scm-version* "2.4.1")
 
 
-(cond-expand 
+(cond-expand
 
  ;; -- Gambit-C
  (gambit
@@ -34,8 +34,8 @@
 
   (define pprint pretty-print)
   (define lalr-keyword? keyword?))
- 
- ;; -- 
+
+ ;; --
  (bigloo
   (define-macro (def-macro form . body)
     `(define-macro ,form (let () ,@body)))
@@ -45,10 +45,10 @@
   (def-macro (BITS-PER-WORD) 29)
   (def-macro (logical-or x . y) `(bit-or ,x ,@y))
   (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj)))
- 
+
  ;; -- Chicken
  (chicken
-  
+
   (define-macro (def-macro form . body)
     `(define-macro ,form (let () ,@body)))
 
@@ -93,14 +93,24 @@
  (sisc
   (import logicops)
   (import record)
-	
+
   (define pprint pretty-print)
   (define lalr-keyword? symbol?)
   (define-macro BITS-PER-WORD (lambda () 32))
   (define-macro logical-or (lambda (x . y) `(logor ,x ,@y)))
   (define-macro (lalr-error msg obj) `(error "~a ~S:" ,msg ,obj)))
-	
-       
+
+ ;; -- Gauche
+ (gauche
+  (use gauche.record)
+  (define-macro (def-macro form . body)
+    `(define-macro ,form (let () ,@body)))
+  (define pprint (lambda (obj) (write obj) (newline)))
+  (define lalr-keyword? symbol?)
+  (def-macro (BITS-PER-WORD) 30)
+  (def-macro (logical-or x . y) `(logior ,x . ,y))
+  (def-macro (lalr-error msg obj) `(error "lalr-parser" ,msg ,obj)))
+
  (else
   (error "Unsupported Scheme system")))
 
@@ -185,7 +195,7 @@
   (define STATE-TABLE-SIZE 1009)
 
 
-  ;; - Tableaux 
+  ;; - Tableaux
   (define rrhs         #f)
   (define rlhs         #f)
   (define ritem        #f)
@@ -1020,10 +1030,10 @@
   ;; ----------------------------------------------------------------------
   ;; operator precedence management
   ;; ----------------------------------------------------------------------
-      
+
   ;; a vector of precedence descriptors where each element
   ;; is of the form (terminal type precedence)
-  (define the-terminals/prec #f)   ; terminal symbols with precedence 
+  (define the-terminals/prec #f)   ; terminal symbols with precedence
 					; the precedence is an integer >= 0
   (define (get-symbol-precedence sym)
     (caddr (vector-ref the-terminals/prec sym)))
@@ -1094,13 +1104,13 @@
 	(if (pair? actions)
 	    (let ((current-action (cadr actions)))
 	      (if (not (= new-action current-action))
-		  ;; -- there is a conflict 
+		  ;; -- there is a conflict
 		  (begin
 		    (if (and (<= current-action 0) (<= new-action 0))
 			;; --- reduce/reduce conflict
 			(begin
 			  (add-conflict-message
-			   "%% Reduce/Reduce conflict (reduce " (- new-action) ", reduce " (- current-action) 
+			   "%% Reduce/Reduce conflict (reduce " (- new-action) ", reduce " (- current-action)
 			   ") on '" (get-symbol (+ symbol nvars)) "' in state " state)
 			  (if (glr-driver?)
 			      (set-cdr! (cdr actions) (cons new-action (cddr actions)))
@@ -1121,7 +1131,7 @@
 				     (if (glr-driver?)
 					 (set-cdr! (cdr actions) (cons new-action (cddr actions)))
 					 (set-car! (cdr actions) new-action))))))))
-          
+
 	    (vector-set! action-table state (cons (list symbol new-action) state-actions)))
 	))
 
@@ -1420,7 +1430,7 @@
     (symbol? x))
 
   (define (valid-terminal? x)
-    (symbol? x))			; DB 
+    (symbol? x))			; DB
 
   ;; ----------------------------------------------------------------------
   ;; Miscellaneous
@@ -1467,7 +1477,7 @@
 	    (if (p x)
 		(cons x (loop y))
 		(loop y))))))
-      
+
   ;; ----------------------------------------------------------------------
   ;; Debugging tools ...
   ;; ----------------------------------------------------------------------
@@ -1564,7 +1574,7 @@
 
 
   ;; ----------------------------------------------------------------------
-      
+
   (define build-goto-table
     (lambda ()
       `(vector
@@ -1600,11 +1610,11 @@
 				   (let loop ((i 1) (l rhs))
 				     (if (pair? l)
 					 (let ((rest (cdr l)))
-					   (cons 
+					   (cons
 					    `(,(string->symbol
 						(string-append
 						 "$"
-						 (number->string 
+						 (number->string
 						  (+ (- n i) 1))))
 					      ,(if (eq? driver-name 'lr-driver)
 						   `(vector-ref ___stack (- ___sp ,(- (* i 2) 1)))
@@ -1714,13 +1724,13 @@
     (set-driver-name! options)
     (let* ((gram/actions (gen-tables! tokens rules))
 	   (code         `(,driver-name ',action-table ,(build-goto-table) ,(build-reduction-table gram/actions))))
-    
+
       (output-table! options)
       (output-parser! options code)
       code))
 
   (extract-arguments arguments build-driver))
-   
+
 
 
 ;;;
@@ -1751,7 +1761,7 @@
 
 
 ;; This function assumes that src-location-1 and src-location-2 are source-locations
-;; Returns #f if they are not locations for the same input 
+;; Returns #f if they are not locations for the same input
 (define (combine-locations src-location-1 src-location-2)
   (let ((offset-1 (source-location-offset src-location-1))
         (offset-2 (source-location-offset src-location-2))
@@ -1797,26 +1807,26 @@
 
   (define ___lexerp #f)
   (define ___errorp #f)
-  
+
   (define ___stack  #f)
   (define ___sp     0)
-  
+
   (define ___curr-input #f)
   (define ___reuse-input #f)
-  
+
   (define ___input #f)
   (define (___consume)
     (set! ___input (if ___reuse-input ___curr-input (___lexerp)))
     (set! ___reuse-input #f)
     (set! ___curr-input ___input))
-  
+
   (define (___pushback)
     (set! ___reuse-input #t))
-  
+
   (define (___initstack)
     (set! ___stack (make-vector *max-stack-size* 0))
     (set! ___sp 0))
-  
+
   (define (___growstack)
     (let ((new-stack (make-vector (* 2 (vector-length ___stack)) 0)))
       (let loop ((i (- (vector-length ___stack) 1)))
@@ -1825,11 +1835,11 @@
 	      (vector-set! new-stack i (vector-ref ___stack i))
 	      (loop (- i 1)))))
       (set! ___stack new-stack)))
-  
+
   (define (___checkstack)
     (if (>= ___sp (vector-length ___stack))
         (___growstack)))
-  
+
   (define (___push delta new-category lvalue)
     (set! ___sp (- ___sp (* delta 2)))
     (let* ((state     (vector-ref ___stack ___sp))
@@ -1838,20 +1848,20 @@
       (___checkstack)
       (vector-set! ___stack ___sp new-state)
       (vector-set! ___stack (- ___sp 1) lvalue)))
-  
+
   (define (___reduce st)
     ((vector-ref ___rtable st) ___stack ___sp ___gtable ___push ___pushback))
-  
+
   (define (___shift token attribute)
     (set! ___sp (+ ___sp 2))
     (___checkstack)
     (vector-set! ___stack (- ___sp 1) attribute)
     (vector-set! ___stack ___sp token))
-  
+
   (define (___action x l)
     (let ((y (assoc x l)))
       (if y (cadr y) (cadar l))))
-  
+
   (define (___recover tok)
     (let find-state ((sp ___sp))
       (if (< sp 0)
@@ -1863,7 +1873,7 @@
                   (set! ___sp sp)
                   (___sync (cadr act) tok))
                 (find-state (- sp 2)))))))
-  
+
   (define (___sync state tok)
     (let ((sync-set (map car (cdr (vector-ref ___atable state)))))
       (set! ___sp (+ ___sp 4))
@@ -1881,7 +1891,7 @@
                   (begin
                     (___consume)
                     (skip))))))))
-  
+
   (define (___category tok)
     (if (lexical-token? tok)
         (lexical-token-category tok)
@@ -1891,7 +1901,7 @@
     (if (lexical-token? tok)
         (lexical-token-value tok)
         tok))
-  
+
   (define (___run)
     (let loop ()
       (if ___input
@@ -1899,15 +1909,15 @@
                  (i     (___category ___input))
                  (attr  (___value ___input))
                  (act   (___action i (vector-ref ___atable state))))
-            
+
             (cond ((not (symbol? i))
                    (___errorp "Syntax error: invalid token: " ___input)
                    #f)
-             
+
                   ;; Input succesfully parsed
                   ((eq? act 'accept)
                    (vector-ref ___stack 1))
-                  
+
                   ;; Syntax error in input
                   ((eq? act '*error*)
                    (if (eq? i '*eoi*)
@@ -1923,18 +1933,18 @@
                                (set! ___sp 0)
                                (set! ___input '*eoi*)))
                          (loop))))
-             
+
                   ;; Shift current token on top of the stack
                   ((>= act 0)
                    (___shift act attr)
                    (set! ___input (if (eq? i '*eoi*) '*eoi* #f))
                    (loop))
-             
+
                   ;; Reduce by rule (- act)
                   (else
                    (___reduce (- act))
                    (loop))))
-          
+
           ;; no lookahead, so check if there is a default action
           ;; that does not require the lookahead
           (let* ((state  (vector-ref ___stack ___sp))
@@ -1944,7 +1954,7 @@
                 (___reduce (- defact))
                 (___consume))
             (loop)))))
-  
+
 
   (lambda (lexerp errorp)
     (set! ___errorp errorp)
@@ -1965,16 +1975,16 @@
 
   (define ___lexerp #f)
   (define ___errorp #f)
-  
-  ;; -- Input handling 
-  
+
+  ;; -- Input handling
+
   (define *input* #f)
   (define (initialize-lexer lexer)
     (set! ___lexerp lexer)
     (set! *input* #f))
   (define (consume)
     (set! *input* (___lexerp)))
-  
+
   (define (token-category tok)
     (if (lexical-token? tok)
         (lexical-token-category tok)
@@ -1986,21 +1996,21 @@
         tok))
 
   ;; -- Processes (stacks) handling
-  
+
   (define *processes* '())
-  
+
   (define (initialize-processes)
     (set! *processes* '()))
   (define (add-process process)
     (set! *processes* (cons process *processes*)))
   (define (get-processes)
     (reverse *processes*))
-  
+
   (define (for-all-processes proc)
     (let ((processes (get-processes)))
       (initialize-processes)
       (for-each proc processes)))
-  
+
   ;; -- parses
   (define *parses* '())
   (define (get-parses)
@@ -2009,26 +2019,26 @@
     (set! *parses* '()))
   (define (add-parse parse)
     (set! *parses* (cons parse *parses*)))
-    
+
 
   (define (push delta new-category lvalue stack)
     (let* ((stack     (drop stack (* delta 2)))
            (state     (car stack))
            (new-state (cdr (assv new-category (vector-ref ___gtable state)))))
         (cons new-state (cons lvalue stack))))
-  
+
   (define (reduce state stack)
     ((vector-ref ___rtable state) stack ___gtable push))
-  
+
   (define (shift state symbol stack)
     (cons state (cons symbol stack)))
-  
+
   (define (get-actions token action-list)
     (let ((pair (assoc token action-list)))
-      (if pair 
+      (if pair
           (cdr pair)
           (cdar action-list)))) ;; get the default action
-  
+
 
   (define (run)
     (let loop-tokens ()
@@ -2064,7 +2074,7 @@
       (if (pair? (get-processes))
           (loop-tokens))))
 
-  
+
   (lambda (lexerp errorp)
     (set! ___errorp errorp)
     (initialize-lexer lexerp)
@@ -2074,7 +2084,7 @@
     (run)
     (get-parses)))
 
-
+#|
 (define (drop l n)
   (cond ((and (> n 0) (pair? l))
 	 (drop (cdr l) (- n 1)))
@@ -2083,3 +2093,4 @@
 
 (define (take-right l n)
   (drop l (- (length l) n)))
+|#
