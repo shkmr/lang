@@ -130,10 +130,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(with-module lang.core (select-lalr-version 'v2.1.0))
+;;(with-module lang.core (select-lalr-version 'v2.4.1))
+;;(with-module lang.core (select-lalr-version 'v2.5.0))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
+
+(print "lalr-scm versioin: " (with-module lang.lalr.lalr *lalr-scm-version*))
+
+(define lalr-eoi
+  (let ((eoi (case (with-module lang.core (select-lalr-version))
+               ((2.4.1 v2.4.1 2.5.0 v2.5.0)
+                (let ((make-lexical-token (with-module lang.lalr.lalr make-lexical-token)))
+                  (if #t
+                    '*eoi*
+                    (make-lexical-token '*eoi* #f #f))))
+               ((2.1.0 v2.1.0) '*eoi*))))
+    (lambda () eoi)))
 
 (define make-lalr-token
   (case (with-module lang.core (select-lalr-version))
@@ -224,7 +237,7 @@
 (define (cscan)
   (let ((x (c89-scan)))
     (if (eof-object? x)
-      '*eoi*
+      (lalr-eoi)
       (case (token-type x)
         ((sharp-command comment whitespaces) (cscan))
         (else

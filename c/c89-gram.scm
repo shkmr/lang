@@ -69,10 +69,12 @@
     ASM ALIGNOF VA_LIST VA_ARG
     )
 
+#|
    (program
     ()
     (file)                       : $1
     )
+|#
 
    (file
     (external_declaration)       : (list $1)
