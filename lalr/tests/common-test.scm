@@ -16,7 +16,24 @@
 
  (else))
 
-(load "../lalr.scm")
+;(load "../lalr.scm")
+(use lang.lalr.lalr)
+(define pretty-print       (with-module lang.lalr.lalr pprint))
+
+(define make-lexical-token
+  (case (with-module lang.core (select-lalr-version))
+    ((2.4.1 v2.4.1 2.5.0 v2.5.0)
+     (with-module lang.lalr.lalr make-lexical-token))
+    ((2.1.0 v2.1.0)
+     (lambda (type loc val)
+       (cons type val)))))
+
+(define lexical-token-category
+  (case (with-module lang.core (select-lalr-version))
+    ((2.4.1 v2.4.1 2.5.0 v2.5.0)
+     (with-module lang.lalr.lalr lexical-token-category))
+    ((2.1.0 v2.1.0)
+     (lambda (token) token))))
 
 (define *error* '())
 
