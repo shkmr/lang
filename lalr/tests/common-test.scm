@@ -18,7 +18,7 @@
 
 ;(load "../lalr.scm")
 (use lang.lalr.lalr)
-(define pretty-print       (with-module lang.lalr.lalr pprint))
+(define pprint (with-module lang.lalr.lalr pprint))
 
 (define make-lexical-token
   (case (with-module lang.core (select-lalr-version))
@@ -37,6 +37,12 @@
 
 (define *error* '())
 
+(define (print-error expr result expected)
+  (display "Failed test: \n")(pprint expr)    (newline)
+  (display "\tresult was: ") (pprint result)  (newline)
+  (display "\texpected: ")   (pprint expected)(newline))
+  
+
 (define-syntax check
   (syntax-rules (=>)
     ((_ ?expr => ?expected-result)
@@ -47,12 +53,7 @@
 	   (expected	?expected-result))
        (set! *error* '())
        (when (not (?equal result expected))
-	 (display "Failed test: \n")
-	 (pretty-print (quote ?expr))(newline)
-	 (display "\tresult was: ")
-	 (pretty-print result)(newline)
-	 (display "\texpected: ")
-	 (pretty-print expected)(newline))))))
+         (print-error '?expr result expected))))))
 
 ;;; --------------------------------------------------------------------
 
