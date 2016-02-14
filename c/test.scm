@@ -119,11 +119,11 @@
 
 (for-each (lambda (f)
             (test* f 0 (test-copy f)))
-          '("test/CARM2.2.c"
-            "test/foo.c"
-            "test/hello.c"
-            "test/str.c"
-            "test/type.c"
+          '("c/CARM2.2.c"
+            "c/foo.c"
+            "c/hello.c"
+            "c/str.c"
+            "c/type.c"
             ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -392,11 +392,11 @@
             (if (use-column-port)
               (test* f 0 (syntax-check/column without-cpp f))
               (test* f 0 (syntax-check/nomirror without-cpp f))))
-          '("test/CARM2.2.c"
-            "test/foo.c"
-            "test/type.c"
-            "test/str.c"
-            "test/hello.c"))
+          '("c/CARM2.2.c"
+            "c/foo.c"
+            "c/type.c"
+            "c/str.c"
+            "c/hello.c"))
 
 (for-each (lambda (f)
             (print f)
@@ -407,12 +407,12 @@
             ((1 gcc-torture) (gcc-torture))
             ((2 ioccc)       (ioccc))
             ((3)
-             '("test/CARM2.2.c"
-               "test/tak.c"
-               "test/type.c"
-               "test/stdh.c"
-               "test/str.c"
-               "test/foo.c"
-               "test/hello.c" ))))
+             '("c/CARM2.2.c"
+               "c/tak.c"
+               "c/type.c"
+               "c/stdh.c"
+               "c/str.c"
+               "c/foo.c"
+               "c/hello.c" ))))
 
 (test-end :exit-on-failure #t)
