@@ -205,6 +205,9 @@
                           :add-path? #t
                           :filter (lambda (e) (string-suffix? ".c" e)))))
 
+;;;
+;;; http://www.ioccc.org/all/all.tar.bz2
+;;;
 (define (ioccc)
   '(
     "ioccc/2014/birken/prog.c"
