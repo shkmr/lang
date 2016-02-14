@@ -8,6 +8,14 @@
 
 (define p? (make-parameter #f))
 
+(define (test-file-set)
+  '(
+    "gauche.scm"
+    "../core.scm"
+    "../c/c89-gram.scm"
+    "../c/c89-scan.scm"
+    ))
+
 ;;;
 ;;;
 ;;;
@@ -91,11 +99,7 @@
 
 (for-each (lambda (f)
             (test* f #t (compare-read-file f)))
-          '("gauche.scm"
-            "../core.scm"
-            "../../scmxref/read-and-anchor.scm"
-            "../../scmxref/dictionary.scm"
-            "../../scmxref/path-util.scm"))
+          (test-file-set))
 
 ;;;
 ;;;
@@ -103,17 +107,17 @@
 (test-section "token-string")
 
 (define (test-copy file)
-  (let ((x (with-input-from-file file (cut port-map token-string gauche-scan))))
-    (with-output-to-file "fo.scm" (cut write-tree x)))
-  (sys-system #"diff ~|file| fo.scm"))
+  (let ((x   (with-input-from-file file (cut port-map token-string gauche-scan)))
+        (tmp (sys-tmpnam)))
+    (unwind-protect
+        (begin
+          (with-output-to-file tmp (cut write-tree x))
+          (sys-system #"diff ~|file| ~|tmp|"))
+      (sys-unlink tmp))))
 
 (for-each (lambda (f)
             (test* f 0 (test-copy f)))
-          '("gauche.scm"
-            "../core.scm"
-            "../../scmxref/read-and-anchor.scm"
-            "../../scmxref/dictionary.scm"
-            "../../scmxref/path-util.scm"))
+          (test-file-set))
 
 ;;;
 ;;;
