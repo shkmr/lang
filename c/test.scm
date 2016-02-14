@@ -195,6 +195,7 @@
     "gcc-torture/src/stdarg-1.c"        ;     __builtin_va_arg
     "gcc-torture/src/stdarg-2.c"        ;     __builtin_va_arg
     "gcc-torture/src/struct-ini-4.c"    ;    Conlon initializer
+    ;; "gcc-torture/src/zero-struct-1.c" ; need to be fixed.
     ))
 
 (define (gcc-torture)
@@ -203,6 +204,36 @@
           (directory-list "gcc-torture/src/"
                           :add-path? #t
                           :filter (lambda (e) (string-suffix? ".c" e)))))
+
+(define (ioccc)
+  '(
+    "ioccc/2014/birken/prog.c"
+    ;; "ioccc/2014/deak/prog.c"  ???
+    "ioccc/2014/endoh1/prog.c"
+    "ioccc/2014/endoh2/prog.c"
+    ;; "ioccc/2014/maffiodo1/prog.c"  -- <SDL.h>
+    "ioccc/2014/maffiodo2/prog.c"
+    "ioccc/2014/morgan/prog.c"
+    "ioccc/2014/sinon/prog.c"
+    ;; "ioccc/2014/skeggs/prog.c" -- _Bool
+    "ioccc/2014/vik/prog.c"
+    "ioccc/2014/wiedijk/prog.c"
+    "ioccc/2013/birken/birken.c"
+    "ioccc/2013/cable1/cable1.c"
+    "ioccc/2013/cable2/cable2.c"
+    "ioccc/2013/cable3/cable3.c"
+    "ioccc/2013/dlowe/dlowe.c"
+    "ioccc/2013/endoh1/endoh1.c"
+    "ioccc/2013/endoh2/endoh2.c"
+    "ioccc/2013/endoh3/endoh3.c"
+    "ioccc/2013/endoh4/endoh4.c"
+    "ioccc/2013/hou/hou.c"
+    "ioccc/2013/mills/mills.c"
+    "ioccc/2013/misaka/misaka.c"
+    "ioccc/2013/morgan1/morgan1.c"
+    "ioccc/2013/morgan2/morgan2.c"
+    "ioccc/2013/robison/robison.c"
+    ))
 
 ;;
 (test-section "test parse")
@@ -307,7 +338,7 @@
 
 (define (with-cpp file thunk)
   (with-input-from-process
-      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -D'__inline=' -trigraphs -E ~|file|"
     thunk))
 
 (define (without-cpp file thunk)
@@ -354,20 +385,7 @@
               0)))))))
 
 (for-each (lambda (f)
-            (if (use-column-port)
-              (test* f 0 (syntax-check/column with-cpp f))
-              (test* f 0 (syntax-check/nomirror with-cpp f))))
-          (if #f
-            (gcc-torture)
-            '("test/CARM2.2.c"
-              "test/tak.c"
-              "test/type.c"
-              "test/stdh.c"
-              "test/str.c"
-              "test/foo.c"
-              "test/hello.c" )))
-
-(for-each (lambda (f)
+            (print f)
             (if (use-column-port)
               (test* f 0 (syntax-check/column without-cpp f))
               (test* f 0 (syntax-check/nomirror without-cpp f))))
@@ -376,5 +394,22 @@
             "test/type.c"
             "test/str.c"
             "test/hello.c"))
+
+(for-each (lambda (f)
+            (print f)
+            (if (use-column-port)
+              (test* f 0 (syntax-check/column with-cpp f))
+              (test* f 0 (syntax-check/nomirror with-cpp f))))
+          (case 3
+            ((1 gcc-torture) (gcc-torture))
+            ((2 ioccc)       (ioccc))
+            ((3)
+             '("test/CARM2.2.c"
+               "test/tak.c"
+               "test/type.c"
+               "test/stdh.c"
+               "test/str.c"
+               "test/foo.c"
+               "test/hello.c" ))))
 
 (test-end :exit-on-failure #t)
