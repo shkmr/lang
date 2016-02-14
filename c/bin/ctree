@@ -1,0 +1,73 @@
+#!/usr/bin/env gosh
+;; -*-Schieme-*-
+(add-load-path "../..")
+
+(use ggc.port.mirroring)
+(use ggc.port.column)
+(use lang.c.c89-scan)
+(use lang.c.c89-gram)
+(use gauche.process)
+(with-module lang.c.c89-scan (use ggc.port.column))
+
+(define (compile e)
+  (define (pp v)
+    (define (ff v n)
+      (let ((sp (make-string n #\space)))
+        (define (wri x) (display sp) (write x) (newline))
+        (define (dsp x) (display sp) (display x) (newline))
+        (for-each (lambda (x)
+                    (if (pair? x)
+                      (begin
+                        (dsp "(")
+                        (ff x (+ n 4))
+                        (dsp ")"))
+                      (wri x)))
+                  v)))
+    (newline)
+    (display "(")(newline)
+    (ff v 4)
+    (display ")")(newline)
+    )
+  (newline)
+  (pp e)
+  e)
+
+(define c89-parse (make-c89-parse compile))
+;;(with-module lang.c.c89-gram (debug #t))
+
+(define (without-cpp file thunk)
+  (with-input-from-file file thunk))
+
+(define (with-cpp file thunk)
+  (with-input-from-process
+      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+    thunk))
+
+(define (ctree file)
+  (initialize-c89-scan)
+  (with-module lang.c.c89-gram (set! type-table (make-hash-table 'eq?)))
+  (with-cpp file
+    (lambda ()
+      (with-input-from-port/mirroring-to-port
+          (current-input-port)
+          (current-output-port)
+        (lambda ()
+          (with-input-from-port/column (current-input-port)
+            (lambda ()
+              (slot-set! (current-input-port) 'name file)
+              (guard (e (else (newline) (display (slot-ref e 'message)) (newline)))
+                (c89-parse cscan error)
+                0))))))))
+
+(define (cscan)
+  (let ((x (c89-scan)))
+    (if (eof-object? x)
+      '*eoi*
+      (case (token-type x)
+        ((sharp-command comment whitespaces illegal-char) (cscan))
+        (else
+         (cons (token-type x) x))))))
+
+(define (main args)
+  (for-each ctree (cdr args))
+  0)

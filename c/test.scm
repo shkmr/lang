@@ -130,6 +130,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;(with-module lang.core (select-lalr-version 'v2.4.0))
 ;;(with-module lang.core (select-lalr-version 'v2.4.1))
 ;;(with-module lang.core (select-lalr-version 'v2.5.0))
 (test-section "lang.c.c89-gram")

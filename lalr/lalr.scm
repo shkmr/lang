@@ -14,6 +14,7 @@
   (define (reload-lalr)
     (case (select-lalr-version)
       ((2.1.0 v2.1.0) (load "lang/lalr/lalr-2.1.0.scm" :environment (find-module 'lang.lalr)))
+      ((2.4.0 v2.4.0) (load "lang/lalr/lalr-20080413.scm" :environment (find-module 'lang.lalr)))
       ((2.4.1 v2.4.1) (load "lang/lalr/lalr-2.4.1.scm" :environment (find-module 'lang.lalr)))
       ((2.5.0 v2.5.0) (load "lang/lalr/lalr-2.5.0.scm" :environment (find-module 'lang.lalr)))
       (else

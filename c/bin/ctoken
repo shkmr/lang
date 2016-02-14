@@ -1,0 +1,31 @@
+#!/usr/bin/env gosh
+;; -*-Schieme-*-
+(add-load-path "../..")
+
+(use file.util)
+(use text.diff)
+(use ggc.port.mirroring)
+(use ggc.port.column)
+(use lang.c.c89-scan)
+(with-module lang.c.c89-scan (use ggc.port.column))
+
+(define (ctoken file)
+  (with-input-from-file/column file
+    (lambda ()
+      (slot-set! (current-input-port) 'name file)
+      (initialize-c89-scan)
+      (let loop ((r '())
+                 (x  (c89-scan)))
+        (cond ((eof-object? x)
+               (let ((o (file->string file))
+                     (n (apply string-append (reverse r))))
+                 (diff-report o n)))
+              (else
+               (write x) (newline)
+               (loop (cons (token-string x) r)
+                     (c89-scan))))))))
+
+(define (main args)
+  (for-each ctoken (cdr args))
+  0)
+
