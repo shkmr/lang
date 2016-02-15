@@ -1,3 +1,4 @@
+
 (use gauche.test)
 (use gauche.parameter)
 (use text.tree)
