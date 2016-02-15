@@ -25,19 +25,19 @@ GRFILES="test-glr-basics-01.scm              \
 #echo "Testing v2.1.0"
 #for item in $LRFILES; do
 #    echo $item
-#    gosh test.scm v2.1.0 $item
+#    gosh run-lalr-test.scm v2.1.0 $item
 #done
 
 echo "Testing v2.5.0"
 for item in $LRFILES $GRFILES; do
     echo $item
-    gosh test.scm v2.5.0 $item
+    gosh run-lalr-test.scm v2.5.0 $item
 done
 
 echo "Testing v2.4.1"
 for item in $LRFILES $GRFILES; do
     echo $item
-    gosh test.scm v2.4.1 $item
+    gosh run-lalr-test.scm v2.4.1 $item
 done
 
 ### end of file
