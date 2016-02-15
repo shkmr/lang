@@ -6,18 +6,31 @@
   (use gauche.record))
 (select-module lang.core)
 
-(define-condition-type <scan-error> <error> #f (lis))
-
 (define select-lalr-version (make-parameter 'v2.1.0))
 
-;;
-;; if use use ggc.port.colum,
-;; port-current-colum <column-port> willbe available.
-;;
-(define-method port-current-column ((port <port>)) #f)
+(define-condition-type <scan-error> <error> #f (lis))
 
 (define (scan-error msg lis . x)
   (error <scan-error> :lis lis msg (lis->string lis) x))
+
+;;
+;;   If you use ggc.port.column,
+;;
+;;     Function: port-current-colum <column-port>
+;;
+;;   will be available.
+;;   You need to shadow generic function created here
+;;   by importing ggc.port.column into your scanner.
+;;
+;;   Ex.
+;;     (use ggc.port.column)
+;;     (use lang.c.c89-scan)
+;;     (with-moudle lang.c.c89-scan (import ggc.port.column)
+;;
+;;   Not sure this is the right way...
+;;   Cf. http://practical-scheme.net/wiliki/wiliki.cgi?Gauche%3AGenericFunctionとModule
+;;
+(define-method port-current-column ((port <port>)) #f)
 
 (define-record-type token
   (%make-token type string value file line column)
@@ -56,7 +69,9 @@
        body ...))))
 
 (define (lis->string lis)
-  (apply string (reverse lis)))
+  (cond ((pair? lis)   (apply string (reverse lis)))
+        ((string? lis) lis)
+        (else (scan-error "lis has to be either a list of characters or a string"))))
 
 (define (lis->symbol lis)
   (string->symbol (lis->string lis)))

@@ -6,7 +6,8 @@
 ;;;      1) Reterns token with
 ;;;
 ;;;          1.0 Type of token (symbol, number, etc)
-;;;          1.1 filename, line number, and possibly column (which points the beginning of token string)
+;;;          1.1 filename, line number, and possibly column
+;;;             (which points the beginning of token string)
 ;;;          1.2 string from which token is made of.
 ;;;
 ;;;      2) Whitespaces and comment is a token, not ignored.  So that

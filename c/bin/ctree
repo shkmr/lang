@@ -7,7 +7,7 @@
 (use lang.c.c89-scan)
 (use lang.c.c89-gram)
 (use gauche.process)
-(with-module lang.c.c89-scan (use ggc.port.column))
+(with-module lang.c.c89-scan (import ggc.port.column))
 
 (define (compile e)
   (define (pp v)

@@ -7,7 +7,7 @@
 (test-module 'lang.c.c89-scan)
 
 ;;;
-;;; If use-column-port is set to #t, use mirroring port as well.
+;;; If use-column-port is set to #t, we use mirroring port as well.
 ;;;
 (define use-column-port (make-parameter #t))
 
@@ -15,7 +15,7 @@
 (if (use-column-port)
   (begin
     (use ggc.port.column)
-    (with-module lang.c.c89-scan (use ggc.port.column))
+    (with-module lang.c.c89-scan (import ggc.port.column))
     (define (with-input-from-string/column str thunk)
       (call-with-input-string str
         (lambda (p)
