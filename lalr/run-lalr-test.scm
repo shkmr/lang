@@ -1,10 +1,10 @@
 (add-load-path "../..")
-(use lang.core)
 (add-load-path "./tests")
+(use lang.lalr.lalr)
 
 (define (main args)
   (let ((v (string->symbol (list-ref args 1)))
         (f (list-ref args 2)))
-    (with-module lang.core (select-lalr-version v))
+    #;(select-lalr-version v)
     (load f)
     (exit 0)))

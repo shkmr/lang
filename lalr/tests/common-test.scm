@@ -21,7 +21,7 @@
 (define pprint (with-module lang.lalr.lalr pprint))
 
 (define make-lexical-token
-  (case (with-module lang.core (select-lalr-version))
+  (case (lalr-version)
     ((2.4.1 v2.4.1 2.5.0 v2.5.0)
      (with-module lang.lalr.lalr make-lexical-token))
     ((2.1.0 v2.1.0)
@@ -29,7 +29,7 @@
        (cons type val)))))
 
 (define lexical-token-category
-  (case (with-module lang.core (select-lalr-version))
+  (case (lalr-version)
     ((2.4.1 v2.4.1 2.5.0 v2.5.0)
      (with-module lang.lalr.lalr lexical-token-category))
     ((2.1.0 v2.1.0)
@@ -41,7 +41,6 @@
   (display "Failed test: \n")(pprint expr)    (newline)
   (display "\tresult was: ") (pprint result)  (newline)
   (display "\texpected: ")   (pprint expected)(newline))
-  
 
 (define-syntax check
   (syntax-rules (=>)

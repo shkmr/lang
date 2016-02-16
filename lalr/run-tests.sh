@@ -34,10 +34,4 @@ for item in $LRFILES $GRFILES; do
     gosh run-lalr-test.scm v2.5.0 $item
 done
 
-echo "Testing v2.4.1"
-for item in $LRFILES $GRFILES; do
-    echo $item
-    gosh run-lalr-test.scm v2.4.1 $item
-done
-
 ### end of file

@@ -6,8 +6,6 @@
   (use gauche.record))
 (select-module lang.core)
 
-(define select-lalr-version (make-parameter 'v2.1.0))
-
 (define-condition-type <scan-error> <error> #f (lis))
 
 (define (scan-error msg lis . x)
