@@ -1,7 +1,7 @@
 (use gauche.test)
 (use gauche.parameter)
 (use text.tree)
-(test-start "lang.c.c89-scan")
+(test-start "lang.c")
 (add-load-path "../..")
 (use lang.c.c89-scan)
 (test-module 'lang.c.c89-scan)
@@ -130,36 +130,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;(with-module lang.core (select-lalr-version 'v2.4.0))
-;;(with-module lang.core (select-lalr-version 'v2.4.1))
-;;(with-module lang.core (select-lalr-version 'v2.5.0))
+(test-section "c89-gram")
+
+(use lang.lalr.lalr)
+;(select-lalr-version 'v2.1.0)
+(print "lalr-scm version: " (with-module lang.lalr.lalr *lalr-scm-version*))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
 
-(print "lalr-scm versioin: " (with-module lang.lalr.lalr *lalr-scm-version*))
-
 (define lalr-eoi
-  (let ((eoi (case (with-module lang.core (select-lalr-version))
+  (let ((eoi (case (lalr-version)
                ((2.4.1 v2.4.1 2.5.0 v2.5.0)
-                (let ((make-lexical-token (with-module lang.lalr.lalr make-lexical-token)))
-                  (if #t
-                    '*eoi*
-                    (make-lexical-token '*eoi* #f #f))))
+                (if #t
+                  '*eoi*
+                  (make-lexical-token '*eoi* #f #f)))
                ((2.1.0 v2.1.0) '*eoi*))))
     (lambda () eoi)))
 
 (define make-lalr-token
-  (case (with-module lang.core (select-lalr-version))
+  (case (lalr-version)
     ((2.4.1 v2.4.1 2.5.0 v2.5.0)
      (lambda (type token)
-       (let ((make-lexical-token   (with-module lang.lalr.lalr make-lexical-token))
-             (make-source-location (with-module lang.lalr.lalr make-source-location)))
-         (let ((loc (make-source-location (token-file token)
-                                          (token-line token)
-                                          (token-column token)
-                                          -1 -1)))
-           (make-lexical-token type loc token)))))
+       (let ((loc (make-source-location (token-file token)
+                                        (token-line token)
+                                        (token-column token)
+                                        -1 -1)))
+         (make-lexical-token type loc token))))
     ((2.1.0 v2.1.0) 
      (lambda  (type token)
        (cons type token)))))
