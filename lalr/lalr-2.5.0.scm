@@ -2090,7 +2090,7 @@
                                      (add-parse (car (take-right stack 2)))
                                      (actions-loop other-actions active-stacks))
                                     ((>= action 0)
-                                     (let ((new-stack (shift action *input* stack)))
+                                     (let ((new-stack (shift action (token-attribute *input*) stack)))
                                        (add-process new-stack))
                                      (actions-loop other-actions active-stacks))
                                     (else
