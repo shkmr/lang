@@ -22,6 +22,12 @@
       (cons r *error*))
   => '(#f (error-handler "Syntax error: unexpected end of input")))
 
+;;; check what happends if we pass character
+(check
+    (let ((r (doit (make-lexical-token #\A #f 1))))
+      (cons r *error*))
+  => '(#f (error-handler "Syntax error: invalid token: " . #\A)))
+
 (check
     ;;Parse correctly the first A  and reduce it.  The second A triggers
     ;;an  error which  empties  the  stack and  consumes  all the  input
