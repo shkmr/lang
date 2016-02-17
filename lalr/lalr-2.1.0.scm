@@ -1910,7 +1910,7 @@
 
 			     (cond
 			      ((not (symbol? i))
-			       (errorp "PARSE ERROR: invalid token: " i)
+			       (errorp "Syntax error: invalid token: " input)
 			       #f)
 
 			      ;; Input succesfully parsed
@@ -1921,10 +1921,10 @@
 			      ((eq? act '*error*)
 			       (if (eq? i '*eoi*)
 				   (begin
-				     (errorp "PARSE ERROR : unexpected end of input ")
+				     (errorp "Syntax error: unexpected end of input")
 				     #f)
 				   (begin
-				     (errorp "PARSE ERROR : unexpected token : " i)
+				     (errorp "Syntax error: unexpected token : " input)
 				     (___recover
 				      stack sp i lexerp
 				      (lambda (stack sp)
