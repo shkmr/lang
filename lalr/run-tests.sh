@@ -22,16 +22,25 @@ GRFILES="test-glr-basics-01.scm              \
          test-glr-script-expression.scm      \
          test-glr-single-expressions.scm"
 
-#echo "Testing v2.1.0"
-#for item in $LRFILES; do
-#    echo $item
-#    gosh run-lalr-test.scm v2.1.0 $item
-#done
+test_210()
+{
+    echo "Testing v2.1.0"
+    for item in $LRFILES; do
+        echo $item
+        gosh run-lalr-test.scm v2.1.0 $item
+    done
+}
 
-echo "Testing v2.5.0"
-for item in $LRFILES $GRFILES; do
-    echo $item
-    gosh run-lalr-test.scm v2.5.0 $item
-done
+test_250()
+{
+    echo "Testing v2.5.0"
+    for item in $LRFILES $GRFILES; do
+        echo $item
+        gosh run-lalr-test.scm v2.5.0 $item
+    done
+}
+
+test_210
+test_250
 
 ### end of file

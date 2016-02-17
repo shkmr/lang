@@ -1869,7 +1869,7 @@
 					     ;; -- 'error' token
 					     (let find-state ((sp sp))
 					       (if (< sp 0)
-						   (k stack sp '*eoi*)
+						   (k stack sp)
 						   (let* ((state (vector-ref stack sp))
 							  (act   (assq 'error (vector-ref ___atable state))))
 						     (if act
@@ -1924,13 +1924,13 @@
 				     (errorp "Syntax error: unexpected end of input")
 				     #f)
 				   (begin
-				     (errorp "Syntax error: unexpected token : " input)
+				     (errorp "Syntax error: unexpected token : " i)
 				     (___recover
 				      stack sp i lexerp
 				      (lambda (stack sp)
 					(if (>= sp 0)
 					    (loop stack sp #f)
-					    (loop stack sp '*eoi*)))))))
+					    (loop stack 0 '*eoi*)))))))
 
 			      ;; Shift current token on top of the stack
 			      ((>= act 0)
