@@ -134,7 +134,7 @@
 
 (use lang.lalr.lalr)
 (select-lalr-version 'v2.1.0)
-(print "lalr-scm version: " (with-module lang.lalr.lalr *lalr-scm-version*))
+(display #"\nUsing lalr-scm version:~(with-module lang.lalr.lalr *lalr-scm-version*)... " (current-error-port))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
