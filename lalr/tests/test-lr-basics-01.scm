@@ -22,8 +22,8 @@
       (cons r *error*))
   => '(#f (error-handler "Syntax error: unexpected end of input")))
 
-;;; check what happends if we pass character
 (check
+    ;;Check what happends if we pass character as token category..
     (let ((r (doit (make-lexical-token #\A #f 1))))
       (cons r *error*))
   => '(#f (error-handler "Syntax error: invalid token: " . #\A)))
