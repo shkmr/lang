@@ -133,33 +133,14 @@
 (test-section "c89-gram")
 
 (use lang.lalr.lalr)
-;(select-lalr-version 'v2.1.0)
+(select-lalr-version 'v2.1.0)
 (print "lalr-scm version: " (with-module lang.lalr.lalr *lalr-scm-version*))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
 (test-module 'lang.c.c89-gram)
 
-(define lalr-eoi
-  (let ((eoi (case (lalr-version)
-               ((2.4.1 v2.4.1 2.5.0 v2.5.0)
-                (if #t
-                  '*eoi*
-                  (make-lexical-token '*eoi* #f #f)))
-               ((2.1.0 v2.1.0) '*eoi*))))
-    (lambda () eoi)))
-
-(define make-lalr-token
-  (case (lalr-version)
-    ((2.4.1 v2.4.1 2.5.0 v2.5.0)
-     (lambda (type token)
-       (let ((loc (make-source-location (token-file token)
-                                        (token-line token)
-                                        (token-column token)
-                                        -1 -1)))
-         (make-lexical-token type loc token))))
-    ((2.1.0 v2.1.0) 
-     (lambda  (type token)
-       (cons type token)))))
+(define (lalr-eoi) '*eoi*)
+(define make-lalr-token cons)
 
 (use file.util)
 (use srfi-13)
@@ -265,6 +246,9 @@
 ;;(define c89-parse (make-c89-parse))
 (define c89-parse (make-c89-parse compile))
 (with-module lang.c.c89-gram (debug #t))
+
+(define (errorp mess :optional (obj #f))
+  #t)
 
 (define (cscan)
   (let ((x (c89-scan)))

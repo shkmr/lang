@@ -129,7 +129,14 @@
  (else
   (error "Unsupported Scheme system")))
 
+(define (make-lexical-token category source value) (cons category value))
+(define (make-source-location . x) #f)
+(define lexical-token?         pair?)
+(define lexical-token-category car)
+(define lexical-token-value    cdr)
+(define lexical-token-source   (^[x] #f))
 
+#|
 (define-record-type lexical-token
   (make-lexical-token category source value)
   lexical-token?
@@ -146,7 +153,7 @@
   (column  source-location-column)
   (offset  source-location-offset)
   (length  source-location-length))
-
+|#
 
 
       ;; - Macros pour la gestion des vecteurs de bits
@@ -1632,10 +1639,10 @@
                                                        `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
                                             (cons
                                              `(,(string->symbol (string-append "$" ns))
-                                               (if (lexical-token? tok) (lexical-token-value tok) tok))
+                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok))
                                              (cons
                                               `(,(string->symbol (string-append "@" ns))
-                                                (if (lexical-token? tok) (lexical-token-source tok) tok))
+                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok))
                                               (loop (+ i 1) rest)))))
 					 '()))
 				   '()))
@@ -1917,6 +1924,11 @@
         (lexical-token-category tok)
         tok))
 
+  (define (___attribute tok)
+    (if (lexical-token? tok)
+        (lexical-token-value tok)
+        #f))
+
   (define (___run)
     (let loop ()
       (if ___input
@@ -1950,7 +1962,7 @@
 
                   ;; Shift current token on top of the stack
                   ((>= act 0)
-                   (___shift act ___input)
+                   (___shift act (___attribute ___input))
                    (set! ___input (if (eq? i '*eoi*) '*eoi* #f))
                    (loop))
 
