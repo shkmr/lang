@@ -15,6 +15,7 @@
 
 (define (make-c89-parse :optional (compile compile) (define-type define-type))
   (lalr-parser
+   ;(driver: glr)
    (expect: 2)  ; ELSE, DOUBLE
    ;;(output: c89-gram "c89-gram.yy.scm")
    ;;(out-table: "c89-gram.out")
