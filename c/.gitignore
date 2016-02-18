@@ -1,2 +1,3 @@
 ioccc
 gcc-torture
+*.log-*
