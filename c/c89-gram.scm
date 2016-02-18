@@ -1,10 +1,5 @@
 ;;;
-;;;     C89 with some extensions and a few bugs.
-;;;
-;;;     BUGS
-;;;      1. Type redefinition (doing typedef for the same
-;;;         type-name more than once) does not work correctly.
-;;;
+;;;     C89 with some C99 extensions, maybe C95?
 ;;;
 (define-module lang.c.c89-gram (extend lang.core)
   (use gauche.parameter)
@@ -15,7 +10,6 @@
 
 (define (make-c89-parse :optional (compile compile) (define-type define-type))
   (lalr-parser
-   ;(driver: glr)
    (expect: 2)  ; ELSE, DOUBLE
    ;;(output: c89-gram "c89-gram.yy.scm")
    ;;(out-table: "c89-gram.out")
