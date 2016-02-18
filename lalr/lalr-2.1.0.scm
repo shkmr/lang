@@ -1910,7 +1910,7 @@
 
 			     (cond
 			      ((not (symbol? i))
-			       (errorp "Syntax error: invalid token: " input)
+			       (errorp "Syntax error: invalid token: " i)
 			       #f)
 
 			      ;; Input succesfully parsed
