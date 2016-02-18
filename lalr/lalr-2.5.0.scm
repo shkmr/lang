@@ -17,9 +17,11 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-(define *lalr-scm-version* "2.5.0")
-
+;;BEGIN-LANG.LALR-CHANGE
+;; I made imcompatible change, so modify version string. -- skimu@mac.com
+;;(define *lalr-scm-version* "2.5.0") -- original
+(define *lalr-scm-version* "2.5.0.lang.lalr")
+;;END-LANG.LALR-CHANGE
 
 (cond-expand
 
@@ -116,7 +118,7 @@
 
  ;; -- Gauche
  (gauche
-  (use gauche.record)
+  ;;(use gauche.record)
   (define-macro (def-macro form . body)
     `(define-macro ,form (let () ,@body)))
   (define pprint (lambda (obj) (write obj) (newline)))
@@ -129,13 +131,15 @@
  (else
   (error "Unsupported Scheme system")))
 
+;;BEGIN-LANG.LALR-CHANGE
+;;  We do not use lexical-token record type.
+;;
 (define (make-lexical-token category source value) (cons category value))
 (define (make-source-location . x) #f)
 (define lexical-token?         pair?)
 (define lexical-token-category car)
 (define lexical-token-value    cdr)
 (define lexical-token-source   (^[x] #f))
-
 #|
 (define-record-type lexical-token
   (make-lexical-token category source value)
@@ -154,7 +158,7 @@
   (offset  source-location-offset)
   (length  source-location-length))
 |#
-
+;;END-LANG.LALR-CHANGE
 
       ;; - Macros pour la gestion des vecteurs de bits
 
@@ -1639,10 +1643,10 @@
                                                        `(list-ref ___sp ,(+ (* (- i 1) 2) 1))))
                                             (cons
                                              `(,(string->symbol (string-append "$" ns))
-                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok))
+                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok)) ; LANG.LALR-CHANGE
                                              (cons
                                               `(,(string->symbol (string-append "@" ns))
-                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok))
+                                               tok #;(if (lexical-token? tok) (lexical-token-value tok) tok)) ; LANG.LALR-CHANGE
                                               (loop (+ i 1) rest)))))
 					 '()))
 				   '()))
@@ -1924,10 +1928,12 @@
         (lexical-token-category tok)
         tok))
 
+  ;;BEGIN-LANG.LALR-CHANGE
   (define (___attribute tok)
     (if (lexical-token? tok)
         (lexical-token-value tok)
         #f))
+  ;;END-LANG.LALR-CHANGE
 
   (define (___run)
     (let loop ()
@@ -1962,7 +1968,7 @@
 
                   ;; Shift current token on top of the stack
                   ((>= act 0)
-                   (___shift act (___attribute ___input))
+                   (___shift act (___attribute ___input)) ;; LANG.LALR-CHANGE
                    (set! ___input (if (eq? i '*eoi*) '*eoi* #f))
                    (loop))
 
@@ -1985,9 +1991,11 @@
   (lambda (lexerp errorp)
     (set! ___errorp errorp)
     (set! ___lexerp lexerp)
+    ;;BEGIN-LANG.LALR-CHANGE PR is sent.
     (set! ___input #f)
     (set! ___curr-input #f)
     (set! ___reuse-input #f)
+    ;;END-LANG.LALR-CHANGE
     (___initstack)
     (___run)))
 
@@ -2090,7 +2098,7 @@
                                      (add-parse (car (take-right stack 2)))
                                      (actions-loop other-actions active-stacks))
                                     ((>= action 0)
-                                     (let ((new-stack (shift action (token-attribute *input*) stack)))
+                                     (let ((new-stack (shift action (token-attribute *input*) stack))) ; LANG.LALR-CHANGE
                                        (add-process new-stack))
                                      (actions-loop other-actions active-stacks))
                                     (else
