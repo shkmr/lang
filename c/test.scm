@@ -286,16 +286,16 @@
 (test-parse "static char *a;"            '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
                                                         (STATIC (CHAR) #f #f)) ))
 (test-parse "extern char a, b;"          '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                          (((IDENTIFIER . "b") non-pointer) :init #f) )
+                                                           (((IDENTIFIER . "b") non-pointer) :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
 (test-parse "extern char a, *b;"         '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                          (((IDENTIFIER . "b") *)           :init #f) )
+                                                           (((IDENTIFIER . "b") *)           :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
 (test-parse "extern char a, **b;"        '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                          (((IDENTIFIER . "b") * *)         :init #f) )
+                                                           (((IDENTIFIER . "b") * *)         :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
 (test-parse "extern char a, ***b;"       '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                          (((IDENTIFIER . "b") * * *)       :init #f) )
+                                                           (((IDENTIFIER . "b") * * *)       :init #f) )
                                                         (EXTERN (CHAR) #f #f)) ))
 
 (test-parse "extern char a[];"           '( (DECLARATION ( (((IDENTIFIER . "a") #f array non-pointer)      :init #f) )
@@ -327,7 +327,8 @@
 
 (define (with-cpp file thunk)
   (with-input-from-process
-      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -D'__inline=' -trigraphs -E ~|file|"
+      #;#"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -D'__inline=' -trigraphs -E ~|file|"
+      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -D'__inline=' -E ~|file|"
     thunk))
 
 (define (without-cpp file thunk)
