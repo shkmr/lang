@@ -131,9 +131,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (test-section "c89-gram")
-
 (use lang.lalr.lalr)
-(select-lalr-version 'v2.1.0)
+(let ((args (command-line)))
+  (if (>= (length args) 2)
+    (select-lalr-version
+     (string->symbol
+      (string-scan (list-ref args 1)
+                   "use-lalr-" 'after)))))
 (display #"\nUsing lalr-scm version:~(with-module lang.lalr.lalr *lalr-scm-version*)... " (current-error-port))
 (test-section "lang.c.c89-gram")
 (use lang.c.c89-gram)
