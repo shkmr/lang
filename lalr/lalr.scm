@@ -3,12 +3,15 @@
 ;;;
 ;;;  Usage
 ;;;
-;;;  (use lang.lalr.lalr) ; load default v2.5.0 version
-;;;  (selct-lalr-version 'v2.1.0)
+;;;  (use lang.lalr.lalr) ; load default v2.1.0 version
+;;;  (selct-lalr-version 'v2.5.0) ; use v2.5.0.
 ;;;
-;;;
-;;;  It is lang.lalr.lalr for now
-;;;
+
+;;
+;;  Module name is lang.lalr.lalr for now,
+;;  we will change this to lang.lalr,
+;;  once quality gets enough to be installed.
+;;
 (define-module lang.lalr.lalr (extend lang.core)
   (export lalr-parser
           select-lalr-version
