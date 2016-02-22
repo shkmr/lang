@@ -76,12 +76,22 @@
 (test-read "#u8(1 2 3)"  )
 (test-read "#f16(1.0 2.0 3.0)")
 (test-read "#f64(1.0 2.0 3.0)")
-(test-read "#|##|###|#|||#### ||#|||||#|#1")
-
 (test-read "\
   (define uvector-alist
     `((\"#s8(\"  . ,s8vector )
       (\"#u8(\"  . ,u8vector )))))")
+
+;; from Gauche/test/srfi.scm
+(test-read "#|##|###|#|||#### ||#|||||#|#1")
+(test-read "(;; #| this is a single-line comment
+          1 #|
+          ;; this is a multi-line comment #|
+          we're still in multi-line comment ;;
+          #|#|multi-line comment can be nested many times|#|#
+              ;; yes, this is still in multi-line comment |#
+              finally, this closes the comment |#
+              ;and this is in single-line comment
+)")
 
 ;;;
 ;;;
