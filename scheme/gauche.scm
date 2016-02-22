@@ -270,7 +270,33 @@
            (make-token 'char lis)))))
 
 (define (read-char-set ch lis)
-  (let ((lis (read-quoted ch lis #\])))
+
+  ;;
+  ;; FIX ME! It will be very hard to recover from erroneous input.
+  ;;
+  (define (read-quoted ch lis)
+    (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: " lis))
+
+          ((char=? #\] ch)
+           (read-char)
+           (cons ch lis))
+
+          ((char=? #\[ ch)
+           (read-char)
+           (let ((lis (read-quoted (peek-char) (cons ch lis))))
+             (read-quoted (peek-char) lis)))
+
+          ((char=? #\\ ch)
+           (read-char)
+           (let ((x (read-char)))
+             (if (eof-object? x)
+               (scan-error "unexpected EOF: " lis)
+               (read-quoted (peek-char) (cons x (cons ch lis))))))
+          (else
+           (read-char)
+           (read-quoted (peek-char) (cons ch lis)))))
+
+  (let ((lis (read-quoted ch lis)))
     (make-token 'char-set lis)))
 
 (define (read-incomplete-string ch lis)
