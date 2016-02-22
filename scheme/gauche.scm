@@ -285,7 +285,7 @@
   (let ((lis (read-quoted ch lis #\/)))
     (if (eqv? #\i (peek-char))
       (make-token 'regexp (cons (read-char) lis))
-      (make-token 'regexp lis)))))
+      (make-token 'regexp lis))))
 
 (define (read-number ch lis)
   (let ((lis (read-word ch lis)))
