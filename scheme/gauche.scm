@@ -242,12 +242,13 @@
         ((char=? #\\ ch)  (read-character (peek-char) (cons ch lis)))
         ((char=? #\[ ch)  (read-char-set (peek-char) (cons ch lis)))
         ((char=? #\/ ch)  (read-regexp (peek-char) (cons ch lis)))
-        ((char=? #\| ch)  (read-nested-comment (peek-char) (cons ch lis) 0))
+        ((char=? #\| ch)  (read-nested-comment (peek-char) (cons ch lis)))
         ((char=? #\" ch)  (read-string-interpolation (peek-char) (cons ch lis)))
         ((char=? #\` ch)  (if-followed-by x  #\"  (read-string-interpolation (peek-char) (cons x (cons ch lis)))))
         ((char=? #\* ch)  (if-followed-by x  #\"  (read-incomplete-string (peek-char) (cons x (cons ch lis)))))
         ((char=? #\, ch)  (if-followed-by x  #\(  (make-token 'sharp-comma (cons x (cons ch lis)))))
         ((char=? #\? ch)  (if-followed-by x  #\=  (make-token 'debug-print (cons x (cons ch lis)))))
+        ((char=? #\: ch)  (make-token 'uninterned-symbol (read-word ch lis)))
         ((char-set-contains? #[BDEIOXbdeiox1-9] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[TFSUtfsu] ch)
          (let* ((l   (read-word (peek-char) (list ch)))
@@ -320,28 +321,32 @@
           (else
            (scan-error "bad numeric format: " lis)))))
 
-(define (read-nested-comment ch lis lvl)
-
-  (define-syntax if-followed-by
-    (syntax-rules ()
-      ((_ x char body ...)
-       (let ((x (read-char)))
-         (cond ((eof-object? x) (scan-error "EOF encountered in nested comment: " (cons ch lis)))
-               ((char=? char  x)  body ...)
-               (else (read-nested-comment (peek-char) (cons x (cons ch lis)) lvl)))))))
-
-  (read-char)
-  (cond ((eof-object? ch) (scan-error "EOF encountered in nested comment: " lis))
-        ((char=? #\| ch)
-         (if-followed-by x #\#
-           (cond ((= lvl 0) (make-token 'nested-comment (cons x (cons ch lis))))
-                 ((> lvl 0) (read-nested-comment (peek-char) (cons x (cons ch lis)) (- lvl 1)))
-                 (else  (scan-error "something went wrong: " (cons x (cons ch lis)) lvl)))))
-        ((char=? #\# ch)
-         (if-followed-by x #\|
-           (read-nested-comment (peek-char) (cons x (cons ch lis)) (+ lvl 1))))
-        (else
-         (read-nested-comment (peek-char) (cons ch lis) lvl))))
+(define (read-nested-comment ch lis)
+  (let lp ((ch     ch)
+           (lis    lis)
+           (state 'start)
+           (lvl    1))
+    (if (eof-object? (read-char))
+      (scan-error "EOF encountered in nested comment: " lis))
+    (case state
+      ((start)
+       (cond ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'read-bar  lvl))
+             ((char=? #\# ch) (lp (peek-char) (cons ch lis) 'read-sharp lvl))
+             (else (lp (peek-char) (cons ch lis) 'start lvl))))
+      ((read-bar)
+       (cond ((char=? #\# ch)
+              (if (> lvl 1)
+                (lp (peek-char) (cons ch lis) 'start (- lvl 1))
+                (make-token 'nested-comment (cons ch lis))))
+             ((char=? #\| ch)
+              (lp (peek-char) (cons ch lis) 'read-bar lvl))
+             (else (lp (peek-char) (cons ch lis) 'start lvl))))
+      ((read-sharp)
+       (cond ((char=? #\| ch)
+              (lp (peek-char) (cons ch lis) 'start (+ lvl 1)))
+             ((char=? #\# ch)
+              (lp (peek-char) (cons ch lis) 'read-sharp lvl))
+             (else (lp (peek-char) (cons ch lis) 'start lvl)))))))
 
 ;;;
 ;;; Emacs does not like char-set symtax....
