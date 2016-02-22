@@ -8,13 +8,21 @@
 
 (define p? (make-parameter #f))
 
-(define (test-file-set)
-  '(
-    "gauche.scm"
-    "../core.scm"
-    "../c/c89-gram.scm"
-    "../c/c89-scan.scm"
-    ))
+(use file.util)
+(use gauche.process)
+(define (Gauche/*.scm)
+  (with-input-from-process "find ../../Gauche -name '*.scm' -print" 
+    (lambda ()
+      (port-map (lambda (x) x) read-line))))
+
+(define (test-file-set n)
+  (case n
+    ((0) '( "gauche.scm"
+            "../core.scm"
+            "../c/c89-gram.scm"
+            "../c/c89-scan.scm"
+            ))
+    ((1) (Gauche/*.scm))))
 
 ;;;
 ;;;
@@ -62,6 +70,8 @@
 (test-read "#(a b c)"    )
 (test-read "#[a b c]"    )
 (test-read "#[abc]"      )
+(test-read "#[[:alnum:]]" )
+(test-read "#[[:xdigit:]]")
 (test-read "#/abc/"      )
 (test-read "#u8(1 2 3)"  )
 (test-read "#f16(1.0 2.0 3.0)")
@@ -71,14 +81,15 @@
   (define uvector-alist
     `((\"#s8(\"  . ,s8vector )
       (\"#u8(\"  . ,u8vector )))))")
+
 ;;;
 ;;;
 ;;;
 (test-section "read-file")
 
 (define (compare-read-file file)
-  (let ((x (open-input-file file))
-        (y (open-input-file file)))
+  (let ((x (open-coding-aware-port (open-input-file file)))
+        (y (open-coding-aware-port (open-input-file file))))
     (define (xread) (with-input-from-port x gauche-read))
     (define (yread) (with-input-from-port y read))
     (unwind-protect
@@ -99,8 +110,7 @@
 
 (for-each (lambda (f)
             (test* f #t (compare-read-file f)))
-          (test-file-set))
-
+          (test-file-set 1))
 ;;;
 ;;;
 ;;;
@@ -117,7 +127,7 @@
 
 (for-each (lambda (f)
             (test* f 0 (test-copy f)))
-          (test-file-set))
+          (test-file-set 0))
 
 ;;;
 ;;;
