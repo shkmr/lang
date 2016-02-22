@@ -321,7 +321,7 @@
           (else
            (scan-error "bad numeric format: " lis)))))
 
-(define (read-nested-comment ch lis)
+(define (read-nested-comment0 ch lis)
   (let lp ((ch     ch)
            (lis    lis)
            (state 'start)
@@ -332,24 +332,46 @@
       ((start)
        (cond ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'read-bar  lvl))
              ((char=? #\# ch) (lp (peek-char) (cons ch lis) 'read-sharp lvl))
-             (else (lp (peek-char) (cons ch lis) 'start lvl))))
+             (else            (lp (peek-char) (cons ch lis) 'start lvl))))
+      ((read-sharp)
+       (cond ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'start (+ lvl 1)))
+             ((char=? #\# ch) (lp (peek-char) (cons ch lis) 'read-sharp lvl))
+             (else            (lp (peek-char) (cons ch lis) 'start lvl))))
       ((read-bar)
        (cond ((char=? #\# ch)
               (if (> lvl 1)
                 (lp (peek-char) (cons ch lis) 'start (- lvl 1))
                 (make-token 'nested-comment (cons ch lis))))
-             ((char=? #\| ch)
-              (lp (peek-char) (cons ch lis) 'read-bar lvl))
-             (else (lp (peek-char) (cons ch lis) 'start lvl))))
+             ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'read-bar lvl))
+             (else            (lp (peek-char) (cons ch lis) 'start lvl))))
+      (else
+       (error "There's a bug in read-nested-comment")))))
+
+(define (read-nested-comment ch lis)
+  (define (lp ch lis state)
+    (if (eof-object? (read-char))
+      (scan-error "EOF encountered in nested comment: " lis))
+    (case state
+      ((start)
+       (cond ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'read-bar))
+             ((char=? #\# ch) (lp (peek-char) (cons ch lis) 'read-sharp))
+             (else            (lp (peek-char) (cons ch lis) 'start))))
       ((read-sharp)
-       (cond ((char=? #\| ch)
-              (lp (peek-char) (cons ch lis) 'start (+ lvl 1)))
-             ((char=? #\# ch)
-              (lp (peek-char) (cons ch lis) 'read-sharp lvl))
-             (else (lp (peek-char) (cons ch lis) 'start lvl)))))))
+       (cond ((char=? #\| ch) (let ((lis (lp (peek-char) (cons ch lis) 'start)))
+                                (lp (peek-char) (cons ch lis) 'start)))
+             ((char=? #\# ch) (lp (peek-char) (cons ch lis) 'read-sharp))
+             (else            (lp (peek-char) (cons ch lis) 'start))))
+      ((read-bar)
+       (cond ((char=? #\# ch) (cons ch lis))
+             ((char=? #\| ch) (lp (peek-char) (cons ch lis) 'read-bar))
+             (else            (lp (peek-char) (cons ch lis) 'start))))
+      (else
+       (error "There's a bug in read-nested-comment"))))
+  (let ((lis (lp ch lis 'start)))
+    (make-token 'nested-comment lis)))
 
 ;;;
-;;; Emacs does not like char-set symtax....
+;;; emacs does not like char-set symtax....
 ;;;
 (define char-special #[()\[\]{}" \\|;#])
 (define delimiter  #[\s|"()\[\]{};'`,])
