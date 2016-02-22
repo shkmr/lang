@@ -76,6 +76,7 @@
 (test-read "#u8(1 2 3)"  )
 (test-read "#f16(1.0 2.0 3.0)")
 (test-read "#f64(1.0 2.0 3.0)")
+(test-read "#|##|###|#|||#### ||#|||||#|#1")
 
 (test-read "\
   (define uvector-alist
