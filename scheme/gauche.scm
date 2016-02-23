@@ -279,32 +279,27 @@
 
 (define (read-char-set ch lis)
 
-  ;;
-  ;; FIX ME! It will be very hard to recover from erroneous input.
-  ;;
-  (define (read-quoted ch lis)
-    (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: " lis))
-
-          ((char=? #\] ch)
-           (read-char)
-           (cons ch lis))
-
+  (define (lp ch lis)
+    (cond ((eof-object? ch) (scan-error "EOF encountered in a char set literal: " lis))
+          ((char=? #\] ch)  (read-char) (cons ch lis))
           ((char=? #\[ ch)
-           (read-char)
-           (let ((lis (read-quoted (peek-char) (cons ch lis))))
-             (read-quoted (peek-char) lis)))
-
+           (read-char) (let ((lis (read-word (peek-char) (cons ch lis))))
+                         (cond ((eof-object? (peek-char))
+                                (scan-error "EOF encountered in a char set literal: " lis))
+                               ((char=? #\]  (peek-char))
+                                (read-char)
+                                (lp (peek-char) (cons #\] lis)))
+                               (else
+                                (scan-error "Invalid character set syntax: " (cons (read-char) lis))))))
           ((char=? #\\ ch)
-           (read-char)
-           (let ((x (read-char)))
-             (if (eof-object? x)
-               (scan-error "unexpected EOF: " lis)
-               (read-quoted (peek-char) (cons x (cons ch lis))))))
-          (else
-           (read-char)
-           (read-quoted (peek-char) (cons ch lis)))))
+           (read-char) (let ((x (read-char)))
+                         (if (eof-object? x)
+                           (scan-error "unexpected EOF: " lis)
+                           (lp (peek-char) (cons x (cons ch lis))))))
 
-  (let ((lis (read-quoted ch lis)))
+          (else (read-char) (lp (peek-char) (cons ch lis)))))
+
+  (let ((lis (lp ch lis)))
     (make-token 'char-set lis)))
 
 (define (read-incomplete-string ch lis)
