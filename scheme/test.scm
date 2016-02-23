@@ -22,7 +22,10 @@
             "../c/c89-gram.scm"
             "../c/c89-scan.scm"
             ))
-    ((1) (Gauche/*.scm))))
+    ((1)
+     (remove (cut member <>  '( "../../Gauche/src/srfis.scm" ; data after (exit 0)
+                                ))
+             (Gauche/*.scm)))))
 
 ;;;
 ;;;
