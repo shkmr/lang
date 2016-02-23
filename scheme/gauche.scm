@@ -73,10 +73,8 @@
                ((whitespaces comment nested-comment)         (read-pair cch lis))
                ((quote quasiquote unquote unquote-splicing)
                 (read-pair cch (cons (list (token-type x) (gauche-read)) lis)))
-               ((hash-bang)
-                ;; FIXME ignore until the end of line... for now
-                (read-comment (peek-char) '())
-                (read-pair cch lis))
+               ((hash-bang)    (read-pair cch lis)) ; ignore hash-bang
+               ((shebang)      (error "#! in wrong place!"))
                ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
                ((sexp-comment) (gauche-read) (read-pair cch lis))
                ((vector-open)  (read-pair cch (cons (apply vector   (read-pair #\) '())) lis)))
@@ -95,10 +93,8 @@
              ((whitespaces comment nested-comment) (gauche-read))
              ((quote quasiquote unquote unquote-splicing)
               (list (token-type x) (gauche-read)))
-             ((hash-bang)
-              ;; FIXME ignore until the end of line... for now
-              (read-comment (peek-char) '())
-              (gauche-read))
+             ((hash-bang)          (gauche-read))  ; ignore hash-bang
+             ((shebang)            (gauche-read))  ; ignore top level shebang
              ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
              ((sexp-comment) (gauche-read) (gauche-read))
              ((vector-open)  (apply vector   (read-pair #\) '())))
@@ -148,16 +144,7 @@
              (read-symbol (peek-char) (list ch)))))))
 
 ;;----------------------------------------------------------------
-;;
-(define (read-whitespaces ch lis)
-  (cond ((eof-object? ch) (make-token 'whitespaces lis))
-        ((char-whitespace? ch)
-         (read-char)
-         (read-whitespaces (peek-char) (cons ch lis)))
-        (else
-         (make-token 'whitespaces lis))))
-
-;;
+;; returns lis
 (define (read-quoted ch lis quote)
   (cond ((eof-object? ch) (scan-error "EOF encountered in a literal: " lis))
         ((char=? quote ch)
@@ -175,18 +162,39 @@
          (read-char)
          (read-quoted (peek-char) (cons ch lis) quote))))
 
-(define (read-string ch lis)
-  (make-token 'string (read-quoted ch lis #\")))
-
-(define (read-escaped-symbol ch lis)
-  (make-token 'escaped-symbol (read-quoted ch lis #\|)))
-
+;; returns lis
 (define (read-word ch lis)
   (cond ((eof-object? ch) lis)
         ((char-set-contains? delimiter ch) lis)
         (else
          (read-char)
          (read-word (peek-char) (cons ch lis)))))
+
+;; returns lis
+(define (read-until-newline ch lis)
+  (cond ((eof-object? ch)       lis)
+        ((char=? #\newline ch)
+         (read-char)
+         (cons ch lis))
+        (else
+         (read-char)
+         (read-until-newline (peek-char) (cons ch lis)))))
+
+
+;;
+(define (read-whitespaces ch lis)
+  (cond ((eof-object? ch) (make-token 'whitespaces lis))
+        ((char-whitespace? ch)
+         (read-char)
+         (read-whitespaces (peek-char) (cons ch lis)))
+        (else
+         (make-token 'whitespaces lis))))
+
+(define (read-string ch lis)
+  (make-token 'string (read-quoted ch lis #\")))
+
+(define (read-escaped-symbol ch lis)
+  (make-token 'escaped-symbol (read-quoted ch lis #\|)))
 
 (define (check-valid-symbol lis)
   (or #t  ;; Anything is valid for now
@@ -206,15 +214,9 @@
           (else
            (check-valid-symbol lis)
            (make-token 'symbol lis)))))
-;;
+
 (define (read-comment ch lis)
-  (cond ((eof-object? ch) (make-token 'comment lis))
-        ((char=? #\newline ch)
-         (read-char)
-         (make-token 'comment (cons ch lis)))
-        (else
-         (read-char)
-         (read-comment (peek-char) (cons ch lis)))))
+  (make-token 'comment (read-until-newline ch lis)))
 
 ;;---------------------------------------------------------------------
 ;;
@@ -238,9 +240,9 @@
   (cond ((eof-object? ch) (unexpected-eof lis))
         ((char=? #\( ch)  (make-token 'vector-open   (cons ch lis)))
         ((char=? #\; ch)  (make-token 'sexp-comment  (cons ch lis)))
-        ((char=? #\! ch)  (make-token 'hash-bang     (cons ch lis)))
+        ((char=? #\! ch)  (read-hash-bang (peek-char) (cons ch lis)))
         ((char=? #\\ ch)  (read-character (peek-char) (cons ch lis)))
-        ((char=? #\[ ch)  (read-char-set (peek-char) (cons ch lis)))
+        ((char=? #\[ ch)  (read-char-set  (peek-char) (cons ch lis)))
         ((char=? #\/ ch)  (read-regexp (peek-char) (cons ch lis)))
         ((char=? #\| ch)  (read-nested-comment (peek-char) (cons ch lis)))
         ((char=? #\" ch)  (read-string-interpolation (peek-char) (cons ch lis)))
@@ -260,6 +262,11 @@
               (if-followed-by x  #\( (make-token 'uvector-open (cons x lis))))
              (else (unsupported lis)))))
         (else (unsupported (cons ch lis)))))
+
+(define (read-hash-bang ch lis)
+  (cond ((eof-object? ch) (scan-error "EOF encountered in #! directive: " lis))
+        ((char-set-contains? #[ /] ch) (make-token 'shebang (read-until-newline ch lis)))
+        (else                          (make-token 'hash-bang (read-word ch lis)))))
 
 (define (read-character ch lis)
   (cond ((eof-object? ch) (scan-error "EOF encountered in character literal: " lis))
