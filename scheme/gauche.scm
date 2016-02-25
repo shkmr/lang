@@ -78,6 +78,8 @@
                ((quote quasiquote unquote unquote-splicing)
                 (read-pair cch (cons (list (token-type x) (gauche-read)) lis)))
                ((hash-bang)    (process-hash-bang x) (read-pair cch lis))
+               ((ss-defining)  (error "shared structure is not supported (yet)"))
+               ((ss-defined)   (error "shared structure is not supported (yet)"))
                ((shebang)      (error "#! in wrong place!"))
                ((sexp-comment) (gauche-read) (read-pair cch lis))
                ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
@@ -100,6 +102,8 @@
              ((hash-bang)          (process-hash-bang x) (gauche-read))
              ((shebang)            (gauche-read)) ; ignore top level shebang (need to check lineno?)
              ((sexp-comment) (gauche-read) (gauche-read))
+             ((ss-defining)  (error "shared structure is not supported (yet)"))
+             ((ss-defined)   (error "shared structure is not supported (yet)"))
              ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
              ((vector-open)  (apply vector   (read-pair #\) '())))
              ((uvector-open) (make-uvector x (read-pair #\) '())))
@@ -256,7 +260,8 @@
         ((char=? #\, ch)  (if-followed-by x  #\(  (make-token 'sharp-comma (cons x (cons ch lis)))))
         ((char=? #\? ch)  (if-followed-by x  #\=  (make-token 'debug-print (cons x (cons ch lis)))))
         ((char=? #\: ch)  (make-token 'uninterned-symbol (read-word ch lis)))
-        ((char-set-contains? #[BDEIOXbdeiox1-9] ch) (read-number (peek-char) (cons ch lis)))
+        ((char-set-contains? #[0-9] ch) (read-ssdef-or-number (peek-char) (cons ch lis)))
+        ((char-set-contains? #[BDEIOXbdeiox] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[TFSUtfsu] ch)
          (let* ((l   (read-word (peek-char) (list ch)))
                 (sym (lis->symbol (map char-foldcase l)))
@@ -267,6 +272,20 @@
               (if-followed-by x  #\( (make-token 'uvector-open (cons x lis))))
              (else (unsupported lis)))))
         (else (unsupported (cons ch lis)))))
+
+(define (read-ssdef-or-number ch lis)
+
+  (define (->num lis)
+    (string->number (apply string (cdr (reverse lis)))))
+
+  (cond ((eof-object? ch) (scan-error "unexpected EOF: " lis))
+        ((char=? #\= ch) (read-char) (make-token 'ss-defining (cons ch lis) (->num lis)))
+        ((char=? #\# ch) (read-char) (make-token 'ss-defined  (cons ch lis) (->num lis)))
+        ((char-set-contains? #[0-9] ch)
+         (read-char)
+         (read-ssdef-or-number (peek-char) (cons ch lis)))
+        (else
+         (read-number ch lis))))
 
 (define (read-hash-bang ch lis)
   (cond ((eof-object? ch) (scan-error "EOF encountered in #! directive: " lis))
