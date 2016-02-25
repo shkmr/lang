@@ -52,6 +52,7 @@
           token-type
           token-string
           token-file
+          token-point
           token-line
           token-column
           <scan-error>

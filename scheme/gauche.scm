@@ -36,6 +36,10 @@
 ;;;
 (define (gauche-read)
 
+  (define (process-hash-bang x)
+    ;; nothing for now.
+    #t)
+
   (define (token->object x)
     (with-input-from-string (token-string x) read))
 
@@ -73,10 +77,10 @@
                ((whitespaces comment nested-comment)         (read-pair cch lis))
                ((quote quasiquote unquote unquote-splicing)
                 (read-pair cch (cons (list (token-type x) (gauche-read)) lis)))
-               ((hash-bang)    (read-pair cch lis)) ; ignore hash-bang
+               ((hash-bang)    (process-hash-bang x) (read-pair cch lis))
                ((shebang)      (error "#! in wrong place!"))
-               ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
                ((sexp-comment) (gauche-read) (read-pair cch lis))
+               ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
                ((vector-open)  (read-pair cch (cons (apply vector   (read-pair #\) '())) lis)))
                ((uvector-open) (read-pair cch (cons (make-uvector x (read-pair #\) '())) lis)))
                (else           (read-pair cch (cons (token->object x) lis))))))))
@@ -93,10 +97,10 @@
              ((whitespaces comment nested-comment) (gauche-read))
              ((quote quasiquote unquote unquote-splicing)
               (list (token-type x) (gauche-read)))
-             ((hash-bang)          (gauche-read))  ; ignore hash-bang
-             ((shebang)            (gauche-read))  ; ignore top level shebang
-             ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
+             ((hash-bang)          (process-hash-bang x) (gauche-read))
+             ((shebang)            (gauche-read)) ; ignore top level shebang (need to check lineno?)
              ((sexp-comment) (gauche-read) (gauche-read))
+             ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
              ((vector-open)  (apply vector   (read-pair #\) '())))
              ((uvector-open) (make-uvector x (read-pair #\) '())))
              (else           (token->object x)))))))
@@ -106,6 +110,7 @@
 ;;;
 (define (gauche-scan)
   (parameterize ((file   (port-name (current-input-port)))
+                 (point  (port-current-point (current-input-port)))
                  (line   (port-current-line (current-input-port)))
                  (column (let1 x (port-current-column (current-input-port))
                            (or x 0))))

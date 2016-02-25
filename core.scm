@@ -29,14 +29,16 @@
 ;;   Cf. http://practical-scheme.net/wiliki/wiliki.cgi?Gauche%3AGenericFunctionとModule
 ;;
 (define-method port-current-column ((port <port>)) #f)
+(define-method port-current-point  ((port <port>)) #f)
 
 (define-record-type token
-  (%make-token type string value file line column)
+  (%make-token type string value file point line column)
   token?
   (type   token-type)
   (string token-string)
   (value  token-value)
   (file   token-file)
+  (point  token-point)
   (line   token-line)
   (column token-column)
   )
@@ -46,6 +48,7 @@
   (write (token-string obj) port))
 
 (define file   (make-parameter #f))
+(define point  (make-parameter #f))
 (define line   (make-parameter #f))
 (define column (make-parameter #f))
 
@@ -54,6 +57,7 @@
                (lis->string lis)
                value
                (file)
+               (point)
                (line)
                (column)))
 
@@ -61,6 +65,7 @@
   (syntax-rules ()
     ((_ port body ...)
      (parameterize ((file   (port-name port))
+                    (point  (port-current-point port))
                     (line   (port-current-line port))
                     (column (let1 x (port-current-column port)
                               (or x 0))))
