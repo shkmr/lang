@@ -25,7 +25,9 @@
     ((1)
      (remove (cut member <>  '( "../../Gauche/src/srfis.scm" ; data after (exit 0)
                                 ))
-             (Gauche/*.scm)))))
+             (Gauche/*.scm)))
+    ((2) '( "../../Gauche/test/compare.scm"))))
+     
 
 ;;;
 ;;;
@@ -33,7 +35,7 @@
 (test-section "gauche-read")
 
 (define (compare-read str)
-  (let ((x (with-input-from-string str gauche-read))
+  (let ((x (with-input-from-string str gauche-read/ss))
         (y (with-input-from-string str read)))
     (if (p?) (begin (newline)
                     (write x) (newline)
@@ -96,6 +98,8 @@
               ;and this is in single-line comment
 )")
 
+(test-read "#0=(1 . #0#)")
+
 ;;;
 ;;;
 ;;;
@@ -104,7 +108,7 @@
 (define (compare-read-file file)
   (let ((x (open-coding-aware-port (open-input-file file)))
         (y (open-coding-aware-port (open-input-file file))))
-    (define (xread) (with-input-from-port x gauche-read))
+    (define (xread) (with-input-from-port x gauche-read/ss))
     (define (yread) (with-input-from-port y read))
     (unwind-protect
         (let lp ((x1 (xread)) (y1 (yread)))
@@ -115,8 +119,9 @@
                 ((equal? x1 y1)
                  (lp (xread) (yread)))
                 ((p?)
-                 (write x1) (newline)
-                 (write y1) (newline)
+                 (newline) (write x1)
+                 (newline) (write y1)
+                 (newline)
                  #f)
                 (else #f)))
       (close-port x)
