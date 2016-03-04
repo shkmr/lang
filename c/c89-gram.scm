@@ -357,6 +357,7 @@
     )
 
    (struct_declaration
+    (specifier_qualifier_list SEMICOLON)                        : (list #f $1)
     (specifier_qualifier_list struct_declarator_list SEMICOLON) : (list $2 $1)
     )
 
@@ -626,7 +627,7 @@
                "\n This Time: "  x))))
 
   (define (register id t)
-    (if (debug) (print "define-type: adding: " id " as: " t))
+    (if (debug) (print "\n(debug)define-type: adding: " id " as: " t))
     (hash-table-put! type-table id t)
     (register-typedef-for-c89-scan id))
 
