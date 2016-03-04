@@ -1,2 +1,3 @@
-CARM2.2.c        -- taken from C A Reference Manual Sec 2.2
+carm2.2.c        -- taken from C A Reference Manual Sec 2.2
 lisp.c, libf.h   -- taken from bflisp (https://github.com/shinh/bflisp)
+
