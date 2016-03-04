@@ -23,7 +23,8 @@
             "../c/c89-scan.scm"
             ))
     ((1)
-     (remove (cut member <>  '( "../../Gauche/src/srfis.scm" ; data after (exit 0)
+     (remove (cut member <>  '( "../../Gauche/src/srfis.scm"    ; data after (exit 0)
+                                "../../Gauche/test/compare.scm" ; uninterned symbol
                                 ))
              (Gauche/*.scm)))
     ((2) '( "../../Gauche/test/compare.scm"))))
