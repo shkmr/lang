@@ -377,17 +377,6 @@
 (for-each (lambda (f)
             (print f)
             (if (use-column-port)
-              (test* f 0 (syntax-check/column without-cpp f))
-              (test* f 0 (syntax-check/nomirror without-cpp f))))
-          '("c/CARM2.2.c"
-            "c/foo.c"
-            "c/type.c"
-            "c/str.c"
-            "c/hello.c"))
-
-(for-each (lambda (f)
-            (print f)
-            (if (use-column-port)
               (test* f 0 (syntax-check/column with-cpp f))
               (test* f 0 (syntax-check/nomirror with-cpp f))))
           (case 3
@@ -400,6 +389,8 @@
                "c/stdh.c"
                "c/str.c"
                "c/foo.c"
-               "c/hello.c" ))))
+               "c/hello.c"
+               "c/lisp.c"
+               ))))
 
 (test-end :exit-on-failure #t)
