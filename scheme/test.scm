@@ -35,7 +35,7 @@
 (test-section "gauche-read")
 
 (define (compare-read str)
-  (let ((x (with-input-from-string str gauche-read/ss))
+  (let ((x (with-input-from-string str gauche-read))
         (y (with-input-from-string str read)))
     (if (p?) (begin (newline)
                     (write x) (newline)
@@ -108,7 +108,7 @@
 (define (compare-read-file file)
   (let ((x (open-coding-aware-port (open-input-file file)))
         (y (open-coding-aware-port (open-input-file file))))
-    (define (xread) (with-input-from-port x gauche-read/ss))
+    (define (xread) (with-input-from-port x gauche-read))
     (define (yread) (with-input-from-port y read))
     (unwind-protect
         (let lp ((x1 (xread)) (y1 (yread)))

@@ -23,6 +23,7 @@
   (use gauche.uvector)
   (export gauche-read
           gauche-scan
+          token?
           token-type
           token-string
           token-file
@@ -34,6 +35,8 @@
 ;;;
 ;;;  gauche-read : usage example of gauche-scan
 ;;;
+(define sstab (make-parameter #f))
+
 (define (gauche-read)
 
   (define (process-hash-bang x)
@@ -62,52 +65,88 @@
         (apply f lis)
         (error "Something went wrong" (token-string x) lis))))
 
-  (define (read-pair cch lis)
+  (define (scan)
+    (let ((x (gauche-scan)))
+      (if (eof-object? x)
+        x
+        (case (token-type x)
+          ((whitespaces comment nested-comment) (scan))
+          (else x)))))
+
+  (define (read-pair cch)
     (let ((x (gauche-scan)))
       (cond ((eof-object? x) (error "Unexpected EOF"))
-            ((eq? cch (token-type x)) (reverse lis))
+            ((eqv? cch (token-type x)) '())
             (else
              (case (token-type x)
-               ((#\() (read-pair cch (cons (read-pair #\) '()) lis)))
-               ((#\[) (read-pair cch (cons (read-pair #\] '()) lis)))
-               ((#\{) (read-pair cch (cons (read-pair #\} '()) lis)))
-               ((#\) #\] #\}) (error "Unmatched parenthesis: " (token-type x)))
-               ((#\.) (let ((a (append (reverse lis) (gauche-read))))
-                        (append (read-pair cch '()) a)))
-               ((whitespaces comment nested-comment)         (read-pair cch lis))
+               ((#\.) (let* ((y (read-item))
+                             (z (scan)))
+                        (if (not (eqv? cch (token-type z)))
+                          (error "DOT (.) in wrong context" z)
+                          y)))
+               ((#\() (let ((y (read-pair #\)))) (cons y (read-pair cch))))
+               ((#\[) (let ((y (read-pair #\]))) (cons y (read-pair cch))))
+               ((#\{) (let ((y (read-pair #\}))) (cons y (read-pair cch))))
+               ((whitespaces comment nested-comment) (read-pair cch))
                ((quote quasiquote unquote unquote-splicing)
-                (read-pair cch (cons (list (token-type x) (gauche-read)) lis)))
-               ((hash-bang)    (process-hash-bang x) (read-pair cch lis))
-               ((ss-defining)  (error "shared structure is not supported (yet)"))
-               ((ss-defined)   (error "shared structure is not supported (yet)"))
+                (cons (list (token-type x) (read-item))
+                      (read-pair cch)))
+               ((hash-bang)    (process-hash-bang x) (read-pair cch))
+               ((ss-defining)  (let ((z (cons #f #f)))
+                                 (hash-table-put! (sstab) (token-value x) z)
+                                 (let ((y (read-item)))
+                                   (if (pair? y)
+                                     (begin
+                                       (set-car! z (car y))
+                                       (set-cdr! z (cdr y))
+                                       (cons z (read-pair cch)))
+                                     (begin
+                                       (hash-table-put! (sstab) (token-value x) y)
+                                       (cons y (read-pair cch)))))))
+               ((ss-defined)   (let ((y (hash-table-get (sstab) (token-value x))))
+                                 (cons y (read-pair cch))))
                ((shebang)      (error "#! in wrong place!"))
-               ((sexp-comment) (gauche-read) (read-pair cch lis))
+               ((sexp-comment) (read-item) (read-pair cch))
                ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
-               ((vector-open)  (read-pair cch (cons (apply vector   (read-pair #\) '())) lis)))
-               ((uvector-open) (read-pair cch (cons (make-uvector x (read-pair #\) '())) lis)))
-               (else           (read-pair cch (cons (token->object x) lis))))))))
+               ((vector-open)  (cons (apply vector   (read-pair #\))) (read-pair cch)))
+               ((uvector-open) (cons (make-uvector x (read-pair #\))) (read-pair cch)))
+               (else           (cons (token->object x) (read-pair cch))))))))
 
-  (let ((x (gauche-scan)))
-    (cond ((eof-object? x) x)
-          (else
-           (case (token-type x)
-             ((#\() (read-pair #\) '()))
-             ((#\[) (read-pair #\] '()))
-             ((#\{) (read-pair #\} '()))
-             ((#\) #\] #\}) (error "Extra close parenthesis: " (token-type x)))
-             ((#\.) (error "dot in wrong context"))
-             ((whitespaces comment nested-comment) (gauche-read))
-             ((quote quasiquote unquote unquote-splicing)
-              (list (token-type x) (gauche-read)))
-             ((hash-bang)          (process-hash-bang x) (gauche-read))
-             ((shebang)            (gauche-read)) ; ignore top level shebang (need to check lineno?)
-             ((sexp-comment) (gauche-read) (gauche-read))
-             ((ss-defining)  (error "shared structure is not supported (yet)"))
-             ((ss-defined)   (error "shared structure is not supported (yet)"))
-             ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
-             ((vector-open)  (apply vector   (read-pair #\) '())))
-             ((uvector-open) (make-uvector x (read-pair #\) '())))
-             (else           (token->object x)))))))
+  (define (read-item)
+    (let ((x (gauche-scan)))
+      (cond ((eof-object? x) x)
+            (else
+             (case (token-type x)
+               ((#\() (read-pair #\)))
+               ((#\[) (read-pair #\]))
+               ((#\{) (read-pair #\}))
+               ((#\) #\] #\}) (error "Extra close parenthesis: " (token-type x)))
+               ((#\.) (error "dot in wrong context"))
+               ((whitespaces comment nested-comment) (read-item))
+               ((quote quasiquote unquote unquote-splicing)
+                (list (token-type x) (read-item)))
+               ((hash-bang)          (process-hash-bang x) (read-item))
+               ((shebang)            (read-item)) ; ignore top level shebang (need to check lineno?)
+               ((sexp-comment) (read-item) (read-item))
+               ((ss-defining)  (let ((z (cons #f #f)))
+                                 (hash-table-put! (sstab) (token-value x) z)
+                                 (let ((y (read-item)))
+                                   (if (pair? y)
+                                     (begin
+                                       (set-car! z (car y))
+                                       (set-cdr! z (cdr y))
+                                       z)
+                                     (begin
+                                       (hash-table-put! (sstab) (token-value x) y)
+                                       y)))))
+               ((ss-defined)   (hash-table-get (sstab) (token-value x)))
+               ((sharp-comma)  (error "#,(tag arg ...) is not supported yet"))
+               ((vector-open)  (apply vector   (read-pair #\) )))
+               ((uvector-open) (make-uvector x (read-pair #\) )))
+               (else           (token->object x)))))))
+
+  (parameterize ((sstab (make-hash-table 'eqv?)))
+    (read-item)))
 
 ;;;
 ;;;
@@ -259,7 +298,7 @@
         ((char=? #\* ch)  (if-followed-by x  #\"  (read-incomplete-string (peek-char) (cons x (cons ch lis)))))
         ((char=? #\, ch)  (if-followed-by x  #\(  (make-token 'sharp-comma (cons x (cons ch lis)))))
         ((char=? #\? ch)  (if-followed-by x  #\=  (make-token 'debug-print (cons x (cons ch lis)))))
-        ((char=? #\: ch)  (make-token 'uninterned-symbol (read-word ch lis)))
+        ((char=? #\: ch)  (make-token 'uninterned-symbol (read-word (peek-char) (cons ch lis))))
         ((char-set-contains? #[0-9] ch) (read-ssdef-or-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[BDEIOXbdeiox] ch) (read-number (peek-char) (cons ch lis)))
         ((char-set-contains? #[TFSUtfsu] ch)
