@@ -11,7 +11,7 @@
 (use file.util)
 (use gauche.process)
 (define (Gauche/*.scm)
-  (with-input-from-process "find ../../Gauche -name '*.scm' -print" 
+  (with-input-from-process "find ../../Gauche -name '*.scm' -print"
     (lambda ()
       (port-map (lambda (x) x) read-line))))
 
@@ -23,12 +23,18 @@
             "../c/c89-scan.scm"
             ))
     ((1)
-     (remove (cut member <>  '( "../../Gauche/src/srfis.scm"    ; data after (exit 0)
-                                "../../Gauche/test/compare.scm" ; uninterned symbol
+     (remove (cut member <>  '( "../../Gauche/src/srfis.scm"         ; data after (exit 0)
+                                "../../Gauche/test/compare.scm"      ; uninterned symbol
+                                "../../Gauche/ext/uvector/test.scm"  ; reader-ctor
+                                "../../Gauche/test/io.scm"           ; reader-ctor
                                 ))
              (Gauche/*.scm)))
-    ((2) '( "../../Gauche/test/compare.scm"))))
-     
+    ((2) '( "../../Gauche/test/compare.scm" ))
+    ((3) '( "../../Gauche/ext/uvector/test.scm"
+            "../../Gauche/test/io.scm"
+            ))))
+
+
 
 ;;;
 ;;;
@@ -127,6 +133,18 @@
                 (else #f)))
       (close-port x)
       (close-port y))))
+
+#|
+;;;
+;;;For reader constructor
+;;;
+(use gauche.array)            ; Gauche/ext/uvector/test.scm
+
+
+(define *counter* 0)          ; Gauche/test.io.scm
+(define-reader-ctor 'countup
+  (^() (inc! *counter*) #t))
+|#
 
 (for-each (lambda (f)
             (test* f #t (compare-read-file f)))
