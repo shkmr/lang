@@ -18,6 +18,8 @@
 ;;;         behavior on error will be different.
 ;;;         (Incorrect input may return a token without raising error)
 ;;;
+;;;      4) Multithread friendly
+;;;
 (define-module lang.scheme.gauche (extend lang.core)
   (use gauche.parameter)
   (use gauche.uvector)
