@@ -27,7 +27,7 @@
 ;;;              and tokens include filename, line number based on this information.
 ;;;
 ;;;      4) Whitespaces and comment is a token, not ignored.  So that
-;;;         application programs can reproduce original source code
+;;;         an application program can reproduce original source code
 ;;;         solely from tokens it receives.
 ;;;
 ;;;      5) Backslash-newline-escape is only recognized within strings
