@@ -11,7 +11,7 @@
 ;;;          1.2 string from which token is made of.
 ;;;
 ;;;      2) Whitespaces and comment is a token, not ignored.  So that
-;;;         application programs can reproduce original source code
+;;;         an application program can reproduce original source code
 ;;;         solely from tokens it receives.
 ;;;
 ;;;      3) Correctly tokenize correct Gauche programs,
