@@ -300,10 +300,22 @@
     )
 
    (int_type_specifier
-    (int_type_name)                           : (list $1)
-    (int_type_name int_type_specifier)        : (cons $1 $2)
-    )
+    (int_type_name)                           : (case $1
+                                                  ((CHAR)      '(SIGNED   CHAR))
+                                                  ((INT)       '(SIGNED   INT))
+                                                  ((SHORT)     '(SIGNED   SHORT))
+                                                  ((LONG)      '(SIGNED   LONG))
+                                                  ((SINGED)    '(SIGNED   INT))
+                                                  ((UNSINGED)  '(UNSIGNED INT)))
 
+    (int_type_name int_type_specifier)        : (case $1
+                                                  ((CHAR)      (list (car $2) 'CHAR))
+                                                  ((INT)       $2)
+                                                  ((SHORT)     (list (car $2) 'SHORT))
+                                                  ((LONG)      (list (car $2) 'LONG))
+                                                  ((SIGNED)    (list 'SIGNED   (cadr $2)))
+                                                  ((UNSIGNED)  (list 'UNSIGNED (cadr $2)))))
+    
    (typedef_declarator_list
     (typedef_declarator)                                 : (list $1)
     (typedef_declarator_list COMMA typedef_declarator)   : (append $1 (list $3))
