@@ -54,9 +54,9 @@
     AND_ASSIGN XOR_ASSIGN OR_ASSIGN
 
     TYPEDEF TYPE_NAME
-    EXTERN STATIC AUTO REGISTER
+    EXTERN STATIC AUTO REGISTER RESTRICT
     VOID CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE
-    CONST VOLATILE
+    CONST VOLATILE NULLABLE NONNULL
     INLINE NORETURN
     STRUCT UNION ENUM ELLIPSIS RANGE
     CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
@@ -71,7 +71,7 @@
 
    (file
     (external_declaration)       : (list $1)
-    (external_declaration file ) : (cons $1 $2)
+    (external_declaration file)  : (cons $1 $2)
     )
 
    (external_declaration
@@ -82,20 +82,36 @@
     )
 
    (function_definition
-    (declaration_specifiers declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION $2 $1 $3 $4)
-    (declaration_specifiers declarator compound_statement) : (list 'DEFINE-FUNCTION $2 $1 'w/o-declaration-list $3)
-    (declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION $1 'w/o-declaration-specifiers $2 $3)
-    (declarator compound_statement) : (list 'DEFINE-FUNCTION $1 'w/o-declaration-list 'w/o-declaration-specifiers $2)
+    (declaration_specifiers declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION
+                                                                                    (cons 'declarator             $2)
+                                                                                    (cons 'declaration-specifiers $1)
+                                                                                    (cons 'declaration-list       $3)
+                                                                                    (cons 'compound-statement     $4))
+    (declaration_specifiers declarator                  compound_statement) : (list 'DEFINE-FUNCTION
+                                                                                    (cons 'declarator             $2)
+                                                                                    (cons 'declaration-specifiers $1)
+                                                                                    (cons 'declaration-list       '())
+                                                                                    (cons 'compound-statement     $3))
+    (                       declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION
+                                                                                    (cons 'declarator             $1)
+                                                                                    (cons 'declaration-specifiers '())
+                                                                                    (cons 'declaration-list       $2)
+                                                                                    (cons 'compound-statement     $3))
+    (                       declarator                  compound_statement) : (list 'DEFINE-FUNCTION
+                                                                                    (cons 'declarator             $1)
+                                                                                    (cons 'declaration-specifiers '())
+                                                                                    (cons 'declaration-list       '())
+                                                                                    (cons 'compound-statement     $2))
     )
 
    (type_definition
-    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) :  (begin (define-type $3 $2)
-                                                                                 (list 'DEFINE-TYPE $3 $2))
+    (TYPEDEF declaration_specifiers typedef_declarator_list SEMICOLON) : (begin (define-type $3 $2)
+                                                                                (list 'DEFINE-TYPE $3 $2))
     )
 
    #;(identifier
     (IDENTIFIER)  : $1
-    ;; (TYPE_NAME : $1
+    (TYPE_NAME)   : $1
     )
 
    (primary_expr
@@ -147,17 +163,17 @@
     )
 
    (unary_operator
-    (&)                   : 'unary-&
-    (*)                   : 'unary-*
-    (+)                   : 'unary-+
-    (-)                   : 'unary--
-    (~)                   : 'unary-~
-    (!)                   : 'unary-!
+    (&)                   : 'UNARY-&
+    (*)                   : 'UNARY-*
+    (+)                   : 'UNARY-+
+    (-)                   : 'UNARY--
+    (~)                   : 'UNARY-~
+    (!)                   : 'UNARY-!
     )
 
    (cast_expr
     (unary_expr)                            : $1
-    (LPAREN type_name RPAREN cast_expr)     : (list 'cast $2 $4)
+    (LPAREN type_name RPAREN cast_expr)     : (list 'CAST $4 $2)
     )
 
    (multiplicative_expr
@@ -252,9 +268,14 @@
     )
 
    (declaration
-    (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION 'w/o-init-declarator-list $1)
-    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION $2 $1)
-    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION $2 $1) ; ignore asm label
+    (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION (cons 'declaration-specifiers $1))
+    (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION
+                                                                               (cons 'init-declaration-list  $2)
+                                                                               (cons 'declaration-specifiers $1))
+    (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION
+                                                                               (cons 'init-declaration-list  $2)
+                                                                               (cons 'declaration-specifiers $1)
+                                                                               (list 'asm_label              $3))
     )
 
    (asm_label
@@ -263,25 +284,22 @@
     )
 
    (declaration_specifiers
-    (type_specifier)                                     : (list 'w/o-storage-class-specifier $1 #f #f)
-    (function_specifier)                                 : (list 'w/o-storage-class-specifier $1 #f #f)
-    (type_qualifier)                                     : (list 'w/o-storage-class-specifier (list 'INT 'INT 'SIGNED) $1 #f)
-
-    (type_qualifier type_specifier)                      : (list 'w/o-storage-class-specifier $2 $1 #f)
-    (type_specifier type_qualifier)                      : (list 'w/o-storage-class-specifier $2 #f $1)
-    (function_specifier type_specifier)                  : (list 'w/o-storage-class-specifier $2 $1 #f)
-    (type_specifier function_specifier)                  : (list 'w/o-storage-class-specifier $1 $2 #f)
-
-    (storage_class_specifier)                                    : (list $1 (list 'INT 'INT 'SIGNED) #f #f)
-    (storage_class_specifier type_specifier)                     : (list $1 $2 #f #f)
-    (storage_class_specifier function_specifier)                 : (list $1 (list 'INT 'INT 'SIGNED) $2 #f)
-    (storage_class_specifier function_specifier type_specifier)  : (list $1 $3 $2 #f)
-    (storage_class_specifier type_specifier function_specifier)  : (list $1 $2 $3 #f)
-
-    (storage_class_specifier type_qualifier)                     : (list $1 (list 'INT 'INT 'SIGNED) $2 #f)
-    (storage_class_specifier type_qualifier type_specifier)      : (list $1 $3 $2 #f)
-    (storage_class_specifier type_specifier type_qualifier)      : (list $1 $3 #f $2)
-     (type_qualifier storage_class_specifier type_specifier)     : (list $2 $3 $1 #f)
+    (type_specifier)                                                  : $1
+    (function_specifier)                                              : $1
+    (type_qualifier)                                                  : $1
+    (type_qualifier type_specifier)                                   : (append $1 $2)
+    (type_specifier type_qualifier)                                   : (append $1 $2)
+    (function_specifier type_specifier)                               : (append $1 $2)
+    (type_specifier function_specifier)                               : (append $1 $2)
+    (storage_class_specifier)                                         : $1
+    (storage_class_specifier type_specifier)                          : (append $1 $2)
+    (storage_class_specifier function_specifier)                      : (append $1 $2)
+    (storage_class_specifier function_specifier type_specifier)       : (append $1 $2 $3)
+    (storage_class_specifier type_specifier function_specifier)       : (append $1 $2 $3)
+    (storage_class_specifier type_qualifier)                          : (append $1 $2)
+    (storage_class_specifier type_qualifier type_specifier)           : (append $1 $2 $3)
+    (storage_class_specifier type_specifier type_qualifier)           : (append $1 $2 $3)
+    (type_qualifier storage_class_specifier type_specifier)           : (append $1 $2 $3)
     )
 
    (float_type_specifier
@@ -301,21 +319,21 @@
 
    (int_type_specifier
     (int_type_name)                           : (case $1
-                                                  ((CHAR)      '(SIGNED   CHAR))
-                                                  ((INT)       '(SIGNED   INT))
-                                                  ((SHORT)     '(SIGNED   SHORT))
-                                                  ((LONG)      '(SIGNED   LONG))
-                                                  ((SINGED)    '(SIGNED   INT))
-                                                  ((UNSINGED)  '(UNSIGNED INT)))
+                                                  ((CHAR)      '(CHAR  SIGNED  ))
+                                                  ((INT)       '(INT   SIGNED  ))
+                                                  ((SHORT)     '(SHORT SIGNED  ))
+                                                  ((LONG)      '(LONG  SIGNED  ))
+                                                  ((SINGED)    '(INT   SIGNED  ))
+                                                  ((UNSINGED)  '(INT   UNSIGNED)))
 
     (int_type_name int_type_specifier)        : (case $1
-                                                  ((CHAR)      (list (car $2) 'CHAR))
+                                                  ((CHAR)      (list 'CHAR  (cadr $2)))
                                                   ((INT)       $2)
-                                                  ((SHORT)     (list (car $2) 'SHORT))
-                                                  ((LONG)      (list (car $2) 'LONG))
-                                                  ((SIGNED)    (list 'SIGNED   (cadr $2)))
-                                                  ((UNSIGNED)  (list 'UNSIGNED (cadr $2)))))
-    
+                                                  ((SHORT)     (list 'SHORT (cadr $2)))
+                                                  ((LONG)      (list 'LONG  (cadr $2)))
+                                                  ((SIGNED)    (list (car $2) 'SIGNED))
+                                                  ((UNSIGNED)  (list (car $2) 'UNSIGNED))))
+
    (typedef_declarator_list
     (typedef_declarator)                                 : (list $1)
     (typedef_declarator_list COMMA typedef_declarator)   : (append $1 (list $3))
@@ -332,10 +350,10 @@
     )
 
    (storage_class_specifier
-    (EXTERN)                       :  'EXTERN
-    (STATIC)                       :  'STATIC
-    (AUTO)                         :  'AUTO
-    (REGISTER)                     :  'REGISTER
+    (EXTERN)                       :  '(EXTERN)
+    (STATIC)                       :  '(STATIC)
+    (AUTO)                         :  '(AUTO)
+    (REGISTER)                     :  '(REGISTER)
     )
 
    (type_specifier
@@ -344,7 +362,7 @@
     (float_type_specifier)         :  $1
     (struct_or_union_specifier)    :  $1
     (enum_specifier)               :  $1
-    (TYPE_NAME)                    :  $1
+    (TYPE_NAME)                    :  (list $1)
     (VA_LIST)                      :  (list 'VA_LIST)
     )
 
@@ -414,13 +432,16 @@
     )
 
    (type_qualifier
-    (CONST)                       :  'CONST
-    (VOLATILE)                    :  'VOLATILE
+    (CONST)                       :  '(CONST)
+    (VOLATILE)                    :  '(VOLATILE)
+    (NULLABLE)                    :  '(NULLABLE)
+    (NONNULL)                     :  '(NONNULL)
+    (RESTRICT)                    :  '(RESTRICT)
     )
 
    (function_specifier
-    (INLINE)                      :  'INLINE
-    (NORETURN)                    :  'NORETURN
+    (INLINE)                      :  '(INLINE)
+    (NORETURN)                    :  '(NORETURN)
     )
 
    (typedef_declarator
