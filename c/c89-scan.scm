@@ -238,7 +238,7 @@
     (int      .  INT)
     (long     .  LONG)
     (register .  REGISTER)
-    ;(restrict .  RESTRICT)   ; c99
+    (restrict .  RESTRICT)   ; c99
     (return   .  RETURN)
     (short    .  SHORT)
     (signed   .  SIGNED)
@@ -252,6 +252,8 @@
     (void     .  VOID)
     (volatile .  VOLATILE)
     (while    .  WHILE)
+    (_Nullable . NULLABLE)
+    (_Nonnull  . NONNULL)
     ;(_Bool    .  BOOL)       ; c99
     ;(_Complex .  COMPLEX)    ; c99
     ;(_Imaginary . IMAGINARY) ; c99
