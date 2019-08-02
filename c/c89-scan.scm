@@ -252,8 +252,8 @@
     (void     .  VOID)
     (volatile .  VOLATILE)
     (while    .  WHILE)
-    (_Nullable . NULLABLE)
-    (_Nonnull  . NONNULL)
+    (_Nullable . NULLABLE)    ; Apple
+    (_Nonnull  . NONNULL)     ; Apple
     ;(_Bool    .  BOOL)       ; c99
     ;(_Complex .  COMPLEX)    ; c99
     ;(_Imaginary . IMAGINARY) ; c99
