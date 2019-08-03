@@ -140,6 +140,7 @@
     )
 
    (compound_literal
+    (LPAREN type_name RPAREN LCBRA  RCBRA)                        : (list 'COMPOUND-LITERAL $2 '())
     (LPAREN type_name RPAREN LCBRA initializer_list RCBRA)        : (list 'COMPOUND-LITERAL $2 $5)
     (LPAREN type_name RPAREN LCBRA initializer_list COMMA RCBRA)  : (list 'COMPOUND-LITERAL $2 $5)
     )
