@@ -414,9 +414,9 @@
     )
 
    (enumerator
-    (IDENTIFIER)                        : (list 'enumerator $1 'w/o-constant-expr)
+    (IDENTIFIER)                        : (list 'enumerator $1 #f)
     (IDENTIFIER = constant_expr)        : (list 'enumerator $1 $3)
-    ;;(TYPE_NAME)                       : (list 'enumerator $1 'w/o-constant-expr)
+    ;;(TYPE_NAME)                       : (list 'enumerator $1 #f)
     ;;(TYPE_NAME = constant_expr)       : (list 'enumerator $1 $3)
     )
 
