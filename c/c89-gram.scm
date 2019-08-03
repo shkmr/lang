@@ -273,14 +273,15 @@
     (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION
                                                                                (cons 'init-declarator-list   $2)
                                                                                (cons 'declaration-specifiers $1))
+
     (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION
                                                                                (cons 'init-declarator-list   $2)
                                                                                (cons 'declaration-specifiers $1)
-                                                                               (list 'asm_label              $3))
+                                                                               (cons 'asm_label              $3))
     )
    (asm_label
-    (ASM LPAREN RPAREN)
-    (ASM LPAREN string_list RPAREN)
+    (ASM LPAREN RPAREN)                     : '(STRING-LIST)
+    (ASM LPAREN string_list RPAREN)         : $3
     )
 
    (declaration_specifiers
