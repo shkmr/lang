@@ -115,7 +115,7 @@
     )
 
    (primary_expr
-    (IDENTIFIER)                   : $1
+    (IDENTIFIER)                   : (list 'REF $1)
     (constant)                     : $1
     (string_list)                  : $1
     (LPAREN expr RPAREN)           : $2
@@ -270,10 +270,10 @@
    (declaration
     (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION (cons 'declaration-specifiers $1))
     (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION
-                                                                               (cons 'init-declaration-list  $2)
+                                                                               (cons 'init-declarator-list   $2)
                                                                                (cons 'declaration-specifiers $1))
     (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION
-                                                                               (cons 'init-declaration-list  $2)
+                                                                               (cons 'init-declarator-list   $2)
                                                                                (cons 'declaration-specifiers $1)
                                                                                (list 'asm_label              $3))
     )
@@ -324,7 +324,8 @@
                                                   ((SHORT)     '(SHORT SIGNED  ))
                                                   ((LONG)      '(LONG  SIGNED  ))
                                                   ((SINGED)    '(INT   SIGNED  ))
-                                                  ((UNSINGED)  '(INT   UNSIGNED)))
+                                                  ((UNSIGNED)  '(INT   UNSIGNED))
+                                                  (else (error #`"XXX got ,|$1|")))
 
     (int_type_name int_type_specifier)        : (case $1
                                                   ((CHAR)      (list 'CHAR  (cadr $2)))
@@ -332,16 +333,17 @@
                                                   ((SHORT)     (list 'SHORT (cadr $2)))
                                                   ((LONG)      (list 'LONG  (cadr $2)))
                                                   ((SIGNED)    (list (car $2) 'SIGNED))
-                                                  ((UNSIGNED)  (list (car $2) 'UNSIGNED))))
-
+                                                  ((UNSIGNED)  (list (car $2) 'UNSIGNED))
+                                                  (else (error #`"XXX got ,|$1|")))
+                                                  )
    (typedef_declarator_list
     (typedef_declarator)                                 : (list $1)
     (typedef_declarator_list COMMA typedef_declarator)   : (append $1 (list $3))
     )
 
    (init_declarator
-    (declarator)                                         : (list $1 :init #f)
-    (declarator = initializer)                           : (list $1 :init $3)
+    (declarator)                                         : (list $1 (cons 'initilizer '()))
+    (declarator = initializer)                           : (list $1 (cons 'initilizer $3))
     )
 
    (init_declarator_list
@@ -357,7 +359,7 @@
     )
 
    (type_specifier
-    (VOID)                         :  (list 'VOID)
+    (VOID)                         :  '(VOID)
     (int_type_specifier)           :  $1
     (float_type_specifier)         :  $1
     (struct_or_union_specifier)    :  $1
@@ -369,11 +371,11 @@
    (struct_or_union_specifier
     (struct_or_union IDENTIFIER LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)
     (struct_or_union TYPE_NAME  LCBRA struct_declaration_list RCBRA) : (list $1 $2 $4)   ;; ???
-    (struct_or_union LCBRA RCBRA)                                    : (list $1 #f 'empty-struct-declaration-list)
+    (struct_or_union LCBRA RCBRA)                                    : (list $1 #f '())
     (struct_or_union LCBRA struct_declaration_list RCBRA)            : (list $1 #f $3)
-    (struct_or_union IDENTIFIER)                                     : (list $1 $2 'w/o-struct-declaration-list)
-    (struct_or_union IDENTIFIER LCBRA RCBRA)                         : (list $1 $2 'empty-struct-declaration-list)
-    (struct_or_union TYPE_NAME)                                      : (list $1 $2 'w/o-struct-declaration-list)
+    (struct_or_union IDENTIFIER)                                     : (list $1 $2 '())
+    (struct_or_union IDENTIFIER LCBRA RCBRA)                         : (list $1 $2 '())
+    (struct_or_union TYPE_NAME)                                      : (list $1 $2 '())
     )
 
    (struct_or_union
@@ -394,8 +396,8 @@
    (specifier_qualifier_list
     (type_specifier)                              : (list $1)
     (type_qualifier)                              : (list $1)
-    (type_specifier specifier_qualifier_list)     : (cons $1 $2)
-    (type_qualifier specifier_qualifier_list)     : (cons $1 $2)
+    (type_specifier specifier_qualifier_list)     : (append (list $1) $2)
+    (type_qualifier specifier_qualifier_list)     : (append (list $1) $2)
     )
 
    (struct_declarator_list
@@ -410,13 +412,13 @@
     )
 
    (enum_specifier
-    (ENUM LCBRA enumerator_list RCBRA)                  : (list 'ENUM #f $3)
-    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)       : (list 'ENUM $2 $4)
-    (ENUM IDENTIFIER LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $2 $4)
-    (ENUM IDENTIFIER)                                   : (list 'ENUM $2 #f)
-    (ENUM TYPE_NAME  LCBRA enumerator_list RCBRA)       : (list 'ENUM $2 $4)
-    (ENUM TYPE_NAME  LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $2 $4)
-    (ENUM TYPE_NAME)                                    : (list 'ENUM $2 #f)
+    (ENUM LCBRA enumerator_list RCBRA)                  : (list 'ENUM $3 #f)
+    (ENUM IDENTIFIER LCBRA enumerator_list RCBRA)       : (list 'ENUM $4 $2)
+    (ENUM IDENTIFIER LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $4 $2)
+    (ENUM IDENTIFIER)                                   : (list 'ENUM #f $2)
+    (ENUM TYPE_NAME  LCBRA enumerator_list RCBRA)       : (list 'ENUM $4 $2)
+    (ENUM TYPE_NAME  LCBRA enumerator_list COMMA RCBRA) : (list 'ENUM $4 $2)
+    (ENUM TYPE_NAME)                                    : (list 'ENUM #f $2)
     )
 
    (enumerator_list
@@ -462,17 +464,17 @@
 
    (declarator
     (pointer declarator2)          : (append $2 $1)
-    (declarator2)                  : (append $1 (list 'non-pointer))
+    (declarator2)                  : $1
     )
 
    (declarator2
-    (IDENTIFIER)                                    : (list $1)
+    (IDENTIFIER)                                    : (list 'identifier $1)
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list $3 'array))
-    (declarator2 LSBRA RSBRA)                       : (append $1 (list #f 'array))
-    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list $3 'function))
-    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list $3 'function))
-    (declarator2 LPAREN RPAREN)                     : (append $1 (list #f 'function))
+    (declarator2 LSBRA assignment_expr RSBRA)       : (list $1 (cons 'assignment-expr $3)     'array)
+    (declarator2 LSBRA RSBRA)                       : (list $1 (cons 'assignment-expr '())    'array)
+    (declarator2 LPAREN parameter_type_list RPAREN) : (list $1 (cons 'parameter-type-list $3) 'function)
+    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (list $1 (cons 'identifier-list $3)     'function)
+    (declarator2 LPAREN RPAREN)                     : (list $1 (cons 'identifier-list '())    'function)
     )
 
    (pointer
@@ -488,8 +490,8 @@
     )
 
    (parameter_type_list
-    (parameter_list)                             : (list 'parameter-type-list $1 #f)
-    (parameter_list COMMA ELLIPSIS)              : (list 'parameter-type-list $1 #t)
+    (parameter_list)                             : $1
+    (parameter_list COMMA ELLIPSIS)              : (append $1 (list $3))
     )
 
    (parameter_list
@@ -498,10 +500,12 @@
     )
 
    (parameter_declaration
-    (declaration_specifiers declarator)          : (list $2 $1)
-    (declaration_specifiers abstract_declarator) : (list $2 $1)
-    (declaration_specifiers)                     : (list #f $1)
-    )
+    (declaration_specifiers declarator)          : (list (cons 'declaration-specifiers $1)
+                                                         (cons 'declarator $2))
+    (declaration_specifiers abstract_declarator) : (list (cons 'declaration-specifiers $1)
+                                                         (cons 'abstract-declarator $2))
+    (declaration_specifiers)                     : (list (cons 'declaration-specifiers $1))
+   )
 
    (IDENTIFIER_list
     (IDENTIFIER)                              : (list $1)
@@ -533,7 +537,7 @@
 
    (initializer
     (assignment_expr)                     : $1
-    (LCBRA RCBRA)                         : (list 'empty)
+    (LCBRA RCBRA)                         : '()
     (LCBRA initializer_list RCBRA)        : $2
     (LCBRA initializer_list COMMA RCBRA)  : $2
     )
@@ -541,8 +545,8 @@
    (initializer_list
     (initializer)                         : (list $1)
     (initializer_list COMMA initializer)  : (append $1 (list $3))
-    (designation initializer)                        : (list $1 $2)               ; c99
-    (initializer_list COMMA designation initializer) : (append $1 (list $3 $4))   ; c99
+    (designation initializer)                        : (list $1 $2)                 ; c99
+    (initializer_list COMMA designation initializer) : (append $1 (list $3 $4))     ; c99
     )
 
    (designation
@@ -576,8 +580,8 @@
     )
 
    (compound_statement
-    (LCBRA RCBRA)                                 : (list 'BLOCK #f)
-    (LCBRA declaration_or_statement_list RCBRA)   : (list 'BLOCK $2)
+    (LCBRA RCBRA)                                 : '()
+    (LCBRA declaration_or_statement_list RCBRA)   :  $2
     )
 
    (declaration_or_statement_list
