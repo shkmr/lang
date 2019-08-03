@@ -178,7 +178,6 @@
     "gcc-torture/src/stdarg-1.c"        ;     __builtin_va_arg
     "gcc-torture/src/stdarg-2.c"        ;     __builtin_va_arg
     "gcc-torture/src/struct-ini-4.c"    ;    Conlon initializer
-    ;; "gcc-torture/src/zero-struct-1.c" ; need to be fixed.
     ))
 
 (define (gcc-torture)
@@ -267,58 +266,65 @@
 (define (test-parse str expect)
   (define (conv lis)
     (map (lambda (x)
-           (cond ((is-a? x token) (cons (token-type x) (token-string x)))
+           (cond ((is-a? x token) (list (token-type x) (token-string x)))
                  ((pair? x) (conv x))
                  (else x)))
          lis))
-  (test* str expect ((if (use-column-port)
-                       with-input-from-string/column
-                       with-input-from-string)
-                     str
-                     (lambda ()
-                       (conv (c89-parse cscan error))))))
+  (if (null? expect)
+    ((if (use-column-port)
+       with-input-from-string/column
+       with-input-from-string)
+     str
+     (lambda ()
+       (display "(test-parse ")
+       (write str)
+       (display " '")
+       (write (conv (c89-parse cscan error)))
+       (display ")\n")))
+    (test* str expect ((if (use-column-port)
+                         with-input-from-string/column
+                         with-input-from-string)
+                       str
+                       (lambda ()
+                         (conv (c89-parse cscan error)))))))
 
 ;;
-(test-parse "char a;"                    '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f) )
-                                                        (w/o-storage-class-specifier (CHAR) #f #f)) ))
-(test-parse "char *a;"                   '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
-                                                        (w/o-storage-class-specifier (CHAR) #f #f)) ))
-(test-parse "static char *a;"            '( (DECLARATION ( (((IDENTIFIER . "a") *) :init #f) )
-                                                        (STATIC (CHAR) #f #f)) ))
-(test-parse "extern char a, b;"          '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                           (((IDENTIFIER . "b") non-pointer) :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char a, *b;"         '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                           (((IDENTIFIER . "b") *)           :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char a, **b;"        '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                           (((IDENTIFIER . "b") * *)         :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char a, ***b;"       '( (DECLARATION ( (((IDENTIFIER . "a") non-pointer) :init #f)
-                                                           (((IDENTIFIER . "b") * * *)       :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
 
-(test-parse "extern char a[];"           '( (DECLARATION ( (((IDENTIFIER . "a") #f array non-pointer)      :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char *a[];"          '( (DECLARATION ( (((IDENTIFIER . "a") #f array *)                :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char (*a)[];"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f array non-pointer)    :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char *(*a)[];"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f array *)              :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "static char a[10];"         '( (DECLARATION ( (((IDENTIFIER . "a") (CONSTANT (INTEGER-CONSTANT . "10")) array non-pointer)
-                                                           :init #f) )
-                                                        (STATIC (CHAR) #f #f)) ))
-(test-parse "extern char a();"           '( (DECLARATION ( (((IDENTIFIER . "a") #f function non-pointer)   :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char (*a)();"        '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer) :init #f) )
-                                                        (EXTERN (CHAR) #f #f)) ))
-(test-parse "extern char *(*a)();"       '( (DECLARATION ( (((IDENTIFIER . "a") * #f function *) :init #f) )
-                                                                 (EXTERN (CHAR) #f #f)) ))
+#|
+(test-parse "char a;"                '())
+(test-parse "char *a;"               '())
+(test-parse "static char *a;"        '())
+(test-parse "extern char a, b;"      '())
+(test-parse "extern char a, *b;"     '())
+(test-parse "extern char a, **b;"    '())
+(test-parse "extern char a, ***b;"   '())
+(test-parse "extern char a[];"       '())
+(test-parse "extern char *a[];"      '())
+(test-parse "extern char (*a)[];"    '())
+(test-parse "extern char *(*a)[];"   '())
+(test-parse "static char a[10];"     '())
+(test-parse "extern char a();"       '())
+(test-parse "extern char (*a)();"    '())
+(test-parse "extern char *(*a)();"   '())
+(test-parse "char (*a)()=&foo;"      '())
+|#
 
-(test-parse "char (*a)()=&foo;"          '( (DECLARATION ( (((IDENTIFIER . "a") * #f function non-pointer)
-                                                            :init (unary-& (IDENTIFIER . "foo"))) )
-                                                         (w/o-storage-class-specifier (CHAR) #f #f)) ))
+(test-parse "char a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer))) (declaration-specifiers INTEGER CHAR))))
+(test-parse "char *a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a") *) (initializer))) (declaration-specifiers INTEGER CHAR))))
+(test-parse "static char *a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a") *) (initializer))) (declaration-specifiers STATIC INTEGER CHAR))))
+(test-parse "extern char a, b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b")) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char a, *b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char a, **b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") * *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char a, ***b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") * * *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char a[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char *a[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char (*a)[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a") *) (assignment-expr)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char *(*a)[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a") *) (assignment-expr) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "static char a[10];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr CONSTANT (INTEGER-CONSTANT "10"))) (initializer))) (declaration-specifiers STATIC INTEGER CHAR))))
+(test-parse "extern char a();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a")) (identifier-list)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char (*a)();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "extern char *(*a)();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
+(test-parse "char (*a)()=&foo;" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list)) (initializer UNARY-& (REF (IDENTIFIER "foo"))))) (declaration-specifiers INTEGER CHAR))))
 
 (test-section "syntax-check")
 
@@ -379,7 +385,7 @@
             (if (use-column-port)
               (test* f 0 (syntax-check/column with-cpp f))
               (test* f 0 (syntax-check/nomirror with-cpp f))))
-          (case 3
+          (case 4
             ((1 gcc-torture) (gcc-torture))
             ((2 ioccc)       (ioccc))
             ((3)
@@ -390,7 +396,8 @@
                "c/str.c"
                "c/foo.c"
                "c/hello.c"
-               "c/lisp.c"
-               ))))
+               "c/lisp.c"))
+            (else '())))
+
 
 (test-end :exit-on-failure #t)
