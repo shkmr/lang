@@ -569,8 +569,8 @@
     )
 
    (compound_statement
-    (LCBRA RCBRA)                                 : '()
-    (LCBRA declaration_or_statement_list RCBRA)   :  $2
+    (LCBRA RCBRA)                                 : (cons 'BLOCK '())
+    (LCBRA declaration_or_statement_list RCBRA)   : (cons 'BLOCK  $2)
     )
 
    (declaration_or_statement_list
@@ -638,36 +638,10 @@
 (define type-table (make-hash-table 'eq?))
 (define debug      (make-parameter #f))
 
-(define (register-type id pointer declaration-specifiers)
-
-  (define (check t x)
-    ;;
-    ;;  TODO: We likely need to resolve all the typef'ed
-    ;;  types before comparing.  We just use equal? for now.
-    ;;
-    (if (debug)
-      (if (equal? t x)
-        (print "typedef: redefinition with the same definition: "  id)
-        (print "typedef: redefinition with different definition: " id
-               "\n  Previous: " t
-               "\n This Time: "  x))))
-
-  (define (register id t)
-    (if (debug) (print "\n(debug)define-type: adding: " id " as: " t))
-    (hash-table-put! type-table id t)
-    (register-typedef-for-c89-scan id))
-
-  (let ((t (cons pointer declaration-specifiers))
-        (x (hash-table-get type-table id #f)))
-    (if x (check t x))
-    (register id t)))
-
 (define (define-type typedef-declarator-list declaration-specifiers)
-  (for-each (lambda (type-decl)
-              (let ((name (car type-decl)))
-                (register-type (string->symbol (token-string name))
-                               (cdr type-decl)
-                               declaration-specifiers)))
+  (for-each (lambda (typedef-decl)
+              (let ((token (car typedef-decl)))
+                (register-typedef-for-c89-scan (string->symbol (token-string token)))))
             typedef-declarator-list))
 
 (provide "lang/c/c89-gram")
