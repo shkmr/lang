@@ -635,8 +635,7 @@
 ;;;
 (define (compile e) e)
 
-(define type-table (make-hash-table 'eq?))
-(define debug      (make-parameter #f))
+(define debug  (make-parameter #f))
 
 (define (define-type typedef-declarator-list declaration-specifiers)
   (for-each (lambda (typedef-decl)
