@@ -83,25 +83,25 @@
 
    (function_definition
     (declaration_specifiers declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION
-                                                                                    (cons 'declarator             $2)
-                                                                                    (cons 'declaration-specifiers $1)
-                                                                                    (cons 'declaration-list       $3)
-                                                                                    (cons 'compound-statement     $4))
+                                                                                    (list 'declarator             $2)
+                                                                                    (list 'declaration-specifiers $1)
+                                                                                    (list 'declaration-list       $3)
+                                                                                    (list 'compound-statement     $4))
     (declaration_specifiers declarator                  compound_statement) : (list 'DEFINE-FUNCTION
-                                                                                    (cons 'declarator             $2)
-                                                                                    (cons 'declaration-specifiers $1)
-                                                                                    (cons 'declaration-list       '())
-                                                                                    (cons 'compound-statement     $3))
+                                                                                    (list 'declarator             $2)
+                                                                                    (list 'declaration-specifiers $1)
+                                                                                    (list 'declaration-list       '())
+                                                                                    (list 'compound-statement     $3))
     (                       declarator declaration_list compound_statement) : (list 'DEFINE-FUNCTION
-                                                                                    (cons 'declarator             $1)
-                                                                                    (cons 'declaration-specifiers '())
-                                                                                    (cons 'declaration-list       $2)
-                                                                                    (cons 'compound-statement     $3))
+                                                                                    (list 'declarator             $1)
+                                                                                    (list 'declaration-specifiers '())
+                                                                                    (list 'declaration-list       $2)
+                                                                                    (list 'compound-statement     $3))
     (                       declarator                  compound_statement) : (list 'DEFINE-FUNCTION
-                                                                                    (cons 'declarator             $1)
-                                                                                    (cons 'declaration-specifiers '())
-                                                                                    (cons 'declaration-list       '())
-                                                                                    (cons 'compound-statement     $2))
+                                                                                    (list 'declarator             $1)
+                                                                                    (list 'declaration-specifiers '())
+                                                                                    (list 'declaration-list       '())
+                                                                                    (list 'compound-statement     $2))
     )
 
    (type_definition
@@ -277,11 +277,11 @@
     (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION
                                                                                (cons 'init-declarator-list   $2)
                                                                                (cons 'declaration-specifiers $1)
-                                                                               (cons 'asm_label              $3))
+                                                                               $3)
     )
    (asm_label
-    (ASM LPAREN RPAREN)                     : '(STRING-LIST)
-    (ASM LPAREN string_list RPAREN)         : $3
+    (ASM LPAREN RPAREN)                     : (cons 'ASM-LABEL '())
+    (ASM LPAREN string_list RPAREN)         : (cons 'ASM-LABEL $3)
     )
 
    (declaration_specifiers
@@ -351,7 +351,7 @@
     (float_type_specifier)         :  $1
     (struct_or_union_specifier)    :  $1
     (enum_specifier)               :  $1
-    (TYPE_NAME)                    :  (list $1)
+    (TYPE_NAME)                    :  (list 'TYPE-REF $1)
     (VA_LIST)                      :  (list 'VA_LIST)
     )
 
@@ -436,34 +436,34 @@
     )
 
    (typedef_declarator
-    (pointer typedef_declarator2) : (append $2 $1)
-    (typedef_declarator2)         : (append $1 (list 'non-pointer))
+    (pointer typedef_declarator2) : (append $2 (list $1))
+    (typedef_declarator2)         : (append $1)
     )
 
    (typedef_declarator2
     (IDENTIFIER)                                            : (list $1)
     (TYPE_NAME)                                             : (list $1)
     (LPAREN typedef_declarator RPAREN)                      : $2
-    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (cons 'assignment-expr  $3)))
-    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (cons 'assignment-expr '())))
-    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function (cons 'parameter-type-list $3)))
-    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'identifier-list $3)))
-    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'identifier-list '())))
+    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (list 'array    $1 (cons 'SIZE  $3))
+    (typedef_declarator2 LSBRA RSBRA)                       : (list 'array    $1 (cons 'SIZE '()))
+    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (list 'function $1 (cons 'parameter-type-list $3))
+    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (list 'function $1 (cons 'parameter-list $3))
+    (typedef_declarator2 LPAREN RPAREN)                     : (list 'function $1 (cons 'parameter-list '()))
     )
 
    (declarator
-    (pointer declarator2)          : (append $2 $1)
-    (declarator2)                  : $1
+    (pointer declarator2)          : (append $2 (list $1)) 
+    (declarator2)                  : (append $1)
     )
 
    (declarator2
     (IDENTIFIER)                                    : (list 'identifier $1)
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA assignment_expr RSBRA)       : (list 'array    $1 (cons 'assignment-expr $3)    )
-    (declarator2 LSBRA RSBRA)                       : (list 'array    $1 (cons 'assignment-expr '())   )
+    (declarator2 LSBRA assignment_expr RSBRA)       : (list 'array    $1 (list 'size $3)    )
+    (declarator2 LSBRA RSBRA)                       : (list 'array    $1 (list 'size '())   )
     (declarator2 LPAREN parameter_type_list RPAREN) : (list 'function $1 (cons 'parameter-type-list $3))
-    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (list 'function $1 (cons 'identifier-list $3)    )
-    (declarator2 LPAREN RPAREN)                     : (list 'function $1 (cons 'identifier-list '())   )
+    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (list 'function $1 (cons 'parameter-list $3)    )
+    (declarator2 LPAREN RPAREN)                     : (list 'function $1 (cons 'parameter-list '())   )
     )
 
    (pointer
@@ -532,25 +532,25 @@
     )
 
    (initializer_list
-    (initializer)                         : (list $1)
-    (initializer_list COMMA initializer)  : (append $1 (list $3))
-    (designation initializer)                        : (list $1 $2)                 ; c99
-    (initializer_list COMMA designation initializer) : (append $1 (list $3 $4))     ; c99
+    (initializer)                                    : (list $1)
+    (initializer_list COMMA initializer)             : (append $1 (list $3))
+    (designation initializer)                        : (list (list 'DESIGNATION $1 $2))                  ; c99
+    (initializer_list COMMA designation initializer) : (append $1 (list (list 'DESIGNATION $3 $4)))      ; c99
     )
 
    (designation
-    (designator_list =)
+    (designator_list =) : $1
     )
 
    (designator
-    (LSBRA constant_expr RSBRA)
-    (DOT IDENTIFIER)
-    (DOT TYPE_NAME)
+    (LSBRA constant_expr RSBRA)     : (list 'ARRAY-REF  $2)
+    (DOT IDENTIFIER)                : (list 'STRUCT-REF $2)
+    (DOT TYPE_NAME)                 : (list 'STRUCT-REF $2)
     )
 
    (designator_list
     (designator)                     : (list $1)
-    (designator_list designator)     : (append $1 $2)
+    (designator_list designator)     : (append $1 (list $2))
     )
 
    (statement
