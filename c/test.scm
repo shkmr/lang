@@ -242,8 +242,8 @@
     (ff v 4)
     (display ")")(newline)
     )
-  (newline)
-  (pp e)
+  ;;(newline)
+  ;;(pp e)
   e)
 
 ;;(define c89-parse (make-c89-parse))
@@ -289,8 +289,6 @@
                          (conv (c89-parse cscan error)))))))
 
 ;;
-
-#|
 (test-parse "char a;"                '())
 (test-parse "char *a;"               '())
 (test-parse "static char *a;"        '())
@@ -307,24 +305,6 @@
 (test-parse "extern char (*a)();"    '())
 (test-parse "extern char *(*a)();"   '())
 (test-parse "char (*a)()=&foo;"      '())
-|#
-
-(test-parse "char a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer))) (declaration-specifiers INTEGER CHAR))))
-(test-parse "char *a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a") *) (initializer))) (declaration-specifiers INTEGER CHAR))))
-(test-parse "static char *a;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a") *) (initializer))) (declaration-specifiers STATIC INTEGER CHAR))))
-(test-parse "extern char a, b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b")) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char a, *b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char a, **b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") * *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char a, ***b;" '((DECLARATION (init-declarator-list ((identifier (IDENTIFIER "a")) (initializer)) ((identifier (IDENTIFIER "b") * * *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char a[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char *a[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char (*a)[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a") *) (assignment-expr)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char *(*a)[];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a") *) (assignment-expr) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "static char a[10];" '((DECLARATION (init-declarator-list ((array (identifier (IDENTIFIER "a")) (assignment-expr CONSTANT (INTEGER-CONSTANT "10"))) (initializer))) (declaration-specifiers STATIC INTEGER CHAR))))
-(test-parse "extern char a();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a")) (identifier-list)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char (*a)();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list)) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "extern char *(*a)();" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list) *) (initializer))) (declaration-specifiers EXTERN INTEGER CHAR))))
-(test-parse "char (*a)()=&foo;" '((DECLARATION (init-declarator-list ((function (identifier (IDENTIFIER "a") *) (identifier-list)) (initializer UNARY-& (REF (IDENTIFIER "foo"))))) (declaration-specifiers INTEGER CHAR))))
 
 (test-section "syntax-check")
 
