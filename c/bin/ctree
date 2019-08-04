@@ -1,5 +1,5 @@
 #!/usr/bin/env gosh
-;; -*-Schieme-*-
+;; -*-Scheme-*-
 (add-load-path "../..")
 
 (use ggc.port.mirroring)
@@ -29,7 +29,7 @@
     (display ")")(newline)
     )
   (newline)
-  (pp e)
+  (pprint e)
   e)
 
 (define c89-parse (make-c89-parse compile))
@@ -70,4 +70,9 @@
 
 (define (main args)
   (for-each ctree (cdr args))
+  (print "========== Defined Types ===============")
+  (let ((h (with-module lang.c.c89-gram type-table)))
+    (hash-table-for-each h (lambda (k v)
+                             (display "\nTYPE-NAME: ")(write k)(newline)
+                             (pprint v))))
   0)
