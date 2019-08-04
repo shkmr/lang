@@ -9,6 +9,37 @@
 (use gauche.process)
 (with-module lang.c.c89-scan (import ggc.port.column))
 
+;;
+;;   copied from c89-gram for future reference.
+;;
+(define (register-type id pointer declaration-specifiers)
+
+  (define (check t x)
+    ;;
+    ;;  TODO: We likely need to resolve all the typef'ed
+    ;;  types before comparing.  We just use equal? for now.
+    ;;
+    (if (debug)
+      (if (equal? t x)
+        (print "typedef: redefinition with the same definition: "  id)
+        (print "typedef: redefinition with different definition: " id
+               "\n  Previous: " t
+               "\n This Time: "  x))))
+
+  (define (register id t)
+    (if (debug) (print "\n(debug)define-type: adding: " id " as: " t))
+    (hash-table-put! type-table id t)
+    (register-typedef-for-c89-scan id))
+
+  (let ((t (cons pointer declaration-specifiers))
+        (x (hash-table-get type-table id #f)))
+    (if x (check t x))
+
+  (register id t)))
+
+;;
+;;
+;;
 (define (compile e)
   (define (pp v)
     (define (ff v n)
