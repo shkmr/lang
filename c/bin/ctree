@@ -79,7 +79,7 @@
 
 (define (with-cpp file thunk)
   (with-input-from-process
-      #`"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ,|file|"
+      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
     thunk))
 
 (define (ctree file)
