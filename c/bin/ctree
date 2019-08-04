@@ -10,6 +10,28 @@
 (with-module lang.c.c89-scan (import ggc.port.column))
 
 ;;
+;;
+;;
+(define (pp v)
+  (define (ff v n)
+    (let ((sp (make-string n #\space)))
+      (define (wri x) (display sp) (write x) (newline))
+      (define (dsp x) (display sp) (display x) (newline))
+      (for-each (lambda (x)
+                  (if (pair? x)
+                    (begin
+                      (dsp "(")
+                      (ff x (+ n 4))
+                      (dsp ")"))
+                    (wri x)))
+                v)))
+  (newline)
+  (display "(")(newline)
+  (ff v 4)
+  (display ")")(newline)
+  )
+
+;;
 ;;   copied from c89-gram for future reference.
 ;;
 (define (register-type id pointer declaration-specifiers)
@@ -41,24 +63,6 @@
 ;;
 ;;
 (define (compile e)
-  (define (pp v)
-    (define (ff v n)
-      (let ((sp (make-string n #\space)))
-        (define (wri x) (display sp) (write x) (newline))
-        (define (dsp x) (display sp) (display x) (newline))
-        (for-each (lambda (x)
-                    (if (pair? x)
-                      (begin
-                        (dsp "(")
-                        (ff x (+ n 4))
-                        (dsp ")"))
-                      (wri x)))
-                  v)))
-    (newline)
-    (display "(")(newline)
-    (ff v 4)
-    (display ")")(newline)
-    )
   (newline)
   (pprint e)
   e)
@@ -66,17 +70,20 @@
 (define c89-parse (make-c89-parse compile))
 ;;(with-module lang.c.c89-gram (debug #t))
 
+;;
+;;
+;;
+
 (define (without-cpp file thunk)
   (with-input-from-file file thunk))
 
 (define (with-cpp file thunk)
   (with-input-from-process
-      #"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ~|file|"
+      #`"cc -D'__attribute__(x)=' -U__BLOCKS__ -D'__restrict=' -E ,|file|"
     thunk))
 
 (define (ctree file)
   (initialize-c89-scan)
-  (with-module lang.c.c89-gram (set! type-table (make-hash-table 'eq?)))
   (with-cpp file
     (lambda ()
       (with-input-from-port/mirroring-to-port
@@ -101,9 +108,6 @@
 
 (define (main args)
   (for-each ctree (cdr args))
-  (print "========== Defined Types ===============")
-  (let ((h (with-module lang.c.c89-gram type-table)))
-    (hash-table-for-each h (lambda (k v)
-                             (display "\nTYPE-NAME: ")(write k)(newline)
-                             (pprint v))))
+  (print "===== Typedefed Names ====")
+  (pprint (with-module lang.c.c89-scan typedefed))
   0)
