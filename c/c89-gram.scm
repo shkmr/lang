@@ -329,8 +329,8 @@
     )
 
    (init_declarator
-    (declarator)                                         : (list $1 (cons 'initializer '()))
-    (declarator = initializer)                           : (list $1 (cons 'initializer  $3))
+    (declarator)                                         : (list $1 (list 'initializer '()))
+    (declarator = initializer)                           : (list $1 (list 'initializer  $3))
     )
 
    (init_declarator_list
@@ -444,11 +444,11 @@
     (IDENTIFIER)                                            : (list $1)
     (TYPE_NAME)                                             : (list $1)
     (LPAREN typedef_declarator RPAREN)                      : $2
-    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (cons 'SIZE  $3)))
-    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (cons 'SIZE '())))
+    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (list 'size  $3)))
+    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (list 'size '())))
     (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function (cons 'parameter-type-list $3)))
-    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'parameter-list $3)))
-    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'parameter-list '())))
+    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'parameter-list      $3)))
+    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'parameter-list     '())))
     )
 
    (declarator
@@ -459,11 +459,11 @@
    (declarator2
     (IDENTIFIER)                                    : (list 'identifier $1)
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA assignment_expr RSBRA)       : (list 'array    $1 (list 'size $3)    )
-    (declarator2 LSBRA RSBRA)                       : (list 'array    $1 (list 'size '())   )
-    (declarator2 LPAREN parameter_type_list RPAREN) : (list 'function $1 (cons 'parameter-type-list $3))
-    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (list 'function $1 (cons 'parameter-list $3)    )
-    (declarator2 LPAREN RPAREN)                     : (list 'function $1 (cons 'parameter-list '())   )
+    (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (list 'size  $3)))
+    (declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (list 'size '())))
+    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function (cons 'parameter-type-list $3)))
+    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'parameter-list      $3)))
+    (declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'parameter-list     '())))
     )
 
    (pointer
