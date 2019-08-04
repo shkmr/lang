@@ -146,55 +146,51 @@
     )
 
    (argument_expr_list
-    (assignment_expr)                              : (list $1)
-    (argument_expr_list COMMA assignment_expr)     : (append $1 (list $3))
+    (assignment_expr)                           : (list $1)
+    (argument_expr_list COMMA assignment_expr)  : (append $1 (list $3))
     )
 
    (unary_expr
-    (postfix_expr)                     : $1
-    (INC_OP unary_expr)                : (list 'PRE-INCREMENT $2)
-    (DEC_OP unary_expr)                : (list 'PRE-DECREMENT $2)
-    (unary_operator cast_expr)         : (list $1 $2)
-    (SIZEOF unary_expr)                : (list 'SIZEOF $2)
-    (SIZEOF LPAREN type_name RPAREN)   : (list 'SIZEOF $3)
-    (ALIGNOF unary_expr)               : (list 'ALIGNOF $2)
-    (ALIGNOF LPAREN type_name RPAREN)  : (list 'ALIGNOF $3)
-    (VA_ARG LPAREN IDENTIFIER COMMA type_name RPAREN) : (list 'VA_ARG $3 $5)
+    (postfix_expr)                                     : $1
+    (INC_OP unary_expr)                                : (list 'PRE-INCREMENT $2)
+    (DEC_OP unary_expr)                                : (list 'PRE-DECREMENT $2)
+    (unary_operator cast_expr)                         : (list $1 $2)
+    (SIZEOF unary_expr)                                : (list 'SIZEOF $2)
+    (SIZEOF LPAREN type_name RPAREN)                   : (list 'SIZEOF $3)
+    (ALIGNOF unary_expr)                               : (list 'ALIGNOF $2)
+    (ALIGNOF LPAREN type_name RPAREN)                  : (list 'ALIGNOF $3)
+    (VA_ARG LPAREN IDENTIFIER COMMA type_name RPAREN)  : (list 'VA_ARG $3 $5)
     )
 
    (unary_operator
-    (&)                   : 'UNARY-&
-    (*)                   : 'UNARY-*
-    (+)                   : 'UNARY-+
-    (-)                   : 'UNARY--
-    (~)                   : 'UNARY-~
-    (!)                   : 'UNARY-!
+    (&)  : 'UNARY-&
+    (*)  : 'UNARY-*
+    (+)  : 'UNARY-+
+    (-)  : 'UNARY--
+    (~)  : 'UNARY-~
+    (!)  : 'UNARY-!
     )
 
    (cast_expr
-    (unary_expr)                            : $1
-    (LPAREN type_name RPAREN cast_expr)     : (list 'CAST $4 $2)
+    (unary_expr)                             : $1
+    (LPAREN type_name RPAREN cast_expr)      : (list 'CAST $4 $2)
     )
-
    (multiplicative_expr
     (cast_expr)                              : $1
     (multiplicative_expr * cast_expr)        : (list '* $1 $3)
     (multiplicative_expr / cast_expr)        : (list '/ $1 $3)
     (multiplicative_expr % cast_expr)        : (list '% $1 $3)
     )
-
    (additive_expr
     (multiplicative_expr)                    : $1
     (additive_expr + multiplicative_expr)    : (list '+ $1 $3)
     (additive_expr - multiplicative_expr)    : (list '- $1 $3)
     )
-
    (shift_expr
     (additive_expr)                          : $1
     (shift_expr LEFT_OP additive_expr)       : (list 'LEFT_OP $1 $3)
     (shift_expr RIGHT_OP additive_expr)      : (list 'RIGHT_OP $1 $3)
     )
-
    (relational_expr
     (shift_expr)                             : $1
     (relational_expr < shift_expr)           : (list '< $1 $3)
@@ -202,43 +198,35 @@
     (relational_expr LE_OP shift_expr)       : (list 'LE_OP $1 $3)
     (relational_expr GE_OP shift_expr)       : (list 'GE_OP $1 $3)
     )
-
    (equality_expr
     (relational_expr)                        : $1
     (equality_expr EQ_OP relational_expr)    : (list 'EQ_OP $1 $3)
     (equality_expr NE_OP relational_expr)    : (list 'EQ_OP $1 $3)
     )
-
    (and_expr
     (equality_expr)                          : $1
     (and_expr & equality_expr)               : (list '& $1 $3)
     )
-
    (exclusive_or_expr
     (and_expr)                               : $1
     (exclusive_or_expr ^ and_expr)           : (list '^ $1 $3)
     )
-
    (inclusive_or_expr
     (exclusive_or_expr)                      : $1
     (inclusive_or_expr OR exclusive_or_expr) : (list 'OR $1 $3)
     )
-
    (logical_and_expr
     (inclusive_or_expr)                         : $1
     (logical_and_expr AND_OP inclusive_or_expr) : (list 'AND_OP $1 $3)
     )
-
    (logical_or_expr
     (logical_and_expr)                       : $1
     (logical_or_expr OR_OP logical_and_expr) : (list 'OR_OP $1 $3)
     )
-
    (conditional_expr
     (logical_or_expr)                                          : $1
     (logical_or_expr ? logical_or_expr COLON conditional_expr) : (list '? $1 $3 $5)
     )
-
    (assignment_expr
     (conditional_expr)                                : $1
     (unary_expr assignment_operator assignment_expr)  : (list $2 $1 $3)
