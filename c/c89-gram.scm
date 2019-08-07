@@ -256,16 +256,14 @@
     )
 
    (declaration
-    (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION
-                                                                               (cons 'declaration-specifiers $1))
+    (declaration_specifiers SEMICOLON)                                 : (list 'DECLARATION (list 'declaration-specifiers $1))
     (declaration_specifiers init_declarator_list SEMICOLON)            : (list 'DECLARATION
-                                                                               (cons 'init-declarator-list   $2)
-                                                                               (cons 'declaration-specifiers $1))
-
+                                                                               (list 'init-declarator-list   $2)
+                                                                               (list 'declaration-specifiers $1))
     (declaration_specifiers init_declarator_list asm_label SEMICOLON)  : (list 'DECLARATION
-                                                                               (cons 'init-declarator-list   $2)
-                                                                               (cons 'declaration-specifiers $1)
-                                                                               $3)
+                                                                               (list 'init-declarator-list   $2)
+                                                                               (list 'declaration-specifiers $1)
+                                                                               (list 'asm-label              $3))
     )
    (asm_label
     (ASM LPAREN RPAREN)                     : (cons 'ASM-LABEL '())
@@ -317,8 +315,8 @@
     )
 
    (init_declarator
-    (declarator)                                         : (list $1 (list 'initializer '()))
-    (declarator = initializer)                           : (list $1 (list 'initializer  $3))
+    (declarator)                                         : (list (list 'declarator $1) (list 'initializer '()))
+    (declarator = initializer)                           : (list (list 'declarator $1) (list 'initializer  $3))
     )
 
    (init_declarator_list
@@ -432,11 +430,11 @@
     (IDENTIFIER)                                            : (list $1)
     (TYPE_NAME)                                             : (list $1)
     (LPAREN typedef_declarator RPAREN)                      : $2
-    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (list 'size  $3)))
-    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (list 'size '())))
-    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function (cons 'parameter-type-list $3)))
-    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'parameter-list      $3)))
-    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'parameter-list     '())))
+    (typedef_declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list (list 'array    (list 'size  $3))))
+    (typedef_declarator2 LSBRA RSBRA)                       : (append $1 (list (list 'array    (list 'size '()))))
+    (typedef_declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list (list 'function (cons 'parameter-type-list $3))))
+    (typedef_declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list (list 'function (cons 'parameter-list      $3))))
+    (typedef_declarator2 LPAREN RPAREN)                     : (append $1 (list (list 'function (cons 'parameter-list     '()))))
     )
 
    (declarator
@@ -447,11 +445,11 @@
    (declarator2
     (IDENTIFIER)                                    : (list 'identifier $1)
     (LPAREN declarator RPAREN)                      : $2
-    (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list 'array    (list 'size  $3)))
-    (declarator2 LSBRA RSBRA)                       : (append $1 (list 'array    (list 'size '())))
-    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list 'function (cons 'parameter-type-list $3)))
-    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list 'function (cons 'parameter-list      $3)))
-    (declarator2 LPAREN RPAREN)                     : (append $1 (list 'function (cons 'parameter-list     '())))
+    (declarator2 LSBRA assignment_expr RSBRA)       : (append $1 (list (list 'array    (list 'size  $3))))
+    (declarator2 LSBRA RSBRA)                       : (append $1 (list (list 'array    (list 'size '()))))
+    (declarator2 LPAREN parameter_type_list RPAREN) : (append $1 (list (list 'function (cons 'parameter-type-list $3))))
+    (declarator2 LPAREN IDENTIFIER_list RPAREN)     : (append $1 (list (list 'function (cons 'parameter-list      $3))))
+    (declarator2 LPAREN RPAREN)                     : (append $1 (list (list 'function (cons 'parameter-list     '()))))
     )
 
    (pointer
@@ -477,11 +475,11 @@
     )
 
    (parameter_declaration
-    (declaration_specifiers declarator)          : (list (cons 'declarator $2)
-                                                         (cons 'declaration-specifiers $1))
-    (declaration_specifiers abstract_declarator) : (list (cons 'abstract-declarator $2)
-                                                         (cons 'declaration-specifiers $1))
-    (declaration_specifiers)                     : (list (cons 'declaration-specifiers $1))
+    (declaration_specifiers declarator)          : (list (list 'declarator $2)
+                                                         (list 'declaration-specifiers $1))
+    (declaration_specifiers abstract_declarator) : (list (list 'abstract-declarator $2)
+                                                         (list 'declaration-specifiers $1))
+    (declaration_specifiers)                     : (list (list 'declaration-specifiers $1))
     )
 
    (IDENTIFIER_list
